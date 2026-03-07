@@ -13,7 +13,7 @@
 | Provider | Speed | Quality | Score | Ratio | Content | Citations |
 |---|---:|---|---:|---:|---:|---:|
 | `brave` | 389ms | `C` | 5.0 | 12.85 | 1,745 chars | 5 |
-| `perplexity` | 505ms | `A-` | 9.0 | 17.82 | 35,524 chars | 5 |
+| `perplexity` | 505ms | `A-` | 9.0 | 17.82 | ~21,500 chars | 5 |
 | `exa` | 1,507ms | `B` | 8.0 | 5.31 | 19,161 chars | 5 |
 | `tavily` | ~1,800ms | `B-` | 7.0 | 3.89 | 6,476 chars | 5 |
 | `parallel` | 2,046ms | `B` | 8.0 | 3.91 | 23,133 chars | 5 |
@@ -45,7 +45,7 @@ Weights: **completeness (30%)** + **accuracy of specifics (25%)** + **citation q
 ### Quality notes
 
 - **OpenAI (A, 10.0):** 10.4K chars with `tool_choice: { type: "web_search" }` forcing search. 28 inline url_citation annotations with title, URL, and character offsets + 98 background sources via `include: ["web_search_call.action.sources"]`. Well-structured markdown with clear framework headers. Most citations of any provider when including sources. **Note:** without `tool_choice`, gpt-4o may answer complex queries from training data and skip search entirely, returning 0 citations.
-- **Perplexity (A-, 9.0):** 35.5K chars of rich snippet content from 5 results via the Search API (`/search` endpoint) with `max_tokens: 10000` and `max_tokens_per_page: 4096`. Each result includes 1K-14K chars of page content. 5 citations to authoritative sources (EU Parliament, IAPP, regulatory comparison sites). Best content volume of any provider. Without `max_tokens`/`max_tokens_per_page`, returns 54K+ chars which may overwhelm agent context. The Chat Completions path (`/chat/completions`) returns a synthesized 14K-char answer with 8-10 citations but takes 28-37s instead of 505ms.
+- **Perplexity (A-, 9.0):** ~21.5K chars of rich snippet content from 5 results via the Search API (`/search` endpoint) with `max_tokens: 4000` and `max_tokens_per_page: 2000`. Each result includes 1.6K-12K chars of page content. 5 citations to authoritative sources (EU Parliament, IAPP, regulatory comparison sites). Top 1-2 results retain full quality; lower results get truncated but still useful. Without `max_tokens`/`max_tokens_per_page`, returns 54K+ chars which overwhelms agent context. The Chat Completions path (`/chat/completions`) returns a synthesized 14K-char answer with 8-10 citations but takes 28-37s instead of 505ms.
 - **Anthropic (A-, 9.0):** 13.5K chars of well-structured comparison with specific compliance requirements per framework (risk categories, FRIA obligations, fines up to €35M/7% turnover). 30 real, deduplicated citations from authoritative legal/regulatory sources. Comprehensive but slow (85s due to multi-turn `pause_turn` continuation). Most real citations of any LLM provider.
 - **Gemini (B+, 8.5):** 12.3K chars of thorough analysis covering all 3 frameworks in depth. But all 5 citations are `vertexaisearch.cloud.google.com` redirect URLs — these return 404 when fetched directly and only resolve in a browser with JavaScript. This is a Gemini API limitation, not a plugin bug. Content quality alone would be A-; unverifiable citations are a significant penalty.
 - **Exa (B, 8.0):** No synthesized answer (traditional search). 19.2K chars of highlighted excerpts from 5 highly relevant sources — regulatory comparison sites, academic papers, legal analysis. Excellent source selection (regulations.ai, IAPP, programming-helper.com). Richest highlighted content among traditional search providers.
@@ -89,6 +89,25 @@ Tavily's `search_depth` and `auto_parameters` significantly affect speed and con
 
 ---
 
+## Perplexity token tuning
+
+The Search API's `max_tokens` and `max_tokens_per_page` control content volume. Tested to find the sweet spot between content richness and agent context efficiency:
+
+| max_tokens | per_page | Total chars | Avg/result | Quality signals (out of 25) |
+|---:|---:|---:|---:|---:|
+| 10,000 | 4,096 | 54,520 | 10,904 | 21 |
+| 5,000 | 2,048 | 25,785 | 5,157 | — |
+| **4,000** | **2,000** | **21,552** | **4,310** | **18** |
+| 3,500 | 1,500 | 19,442 | 3,888 | 17 |
+| 3,000 | 1,024 | 15,217 | 3,043 | — |
+| 2,000 | 1,024 | 10,307 | 2,061 | — |
+
+**4,000/2,000 was chosen as the default.** It returns ~21K chars (in line with Exa and Parallel), keeps 3-5K chars per result, and retains 18/25 quality signals vs 21/25 at the maximum. Source selection is identical across all settings — only snippet length changes.
+
+Note: `max_tokens` is in tokens (~4 chars/token), not characters. The API default is 10,000 tokens which produces 50K+ chars.
+
+---
+
 ## Pre-upgrade baseline (v1)
 
 **Date:** March 7, 2026 (before best-practices upgrades)
@@ -125,7 +144,7 @@ Tavily's `search_depth` and `auto_parameters` significantly affect speed and con
 
 ### Upgrade impact summary
 
-- **Perplexity** had the largest speed improvement: 36.6s → 505ms (**72x faster**) by switching to the Search API. Content controlled via `max_tokens: 10000` (was unbounded at 54K+).
+- **Perplexity** had the largest speed improvement: 36.6s → 505ms (**72x faster**) by switching to the Search API. Content controlled via `max_tokens: 4000` / `max_tokens_per_page: 2000` (~21K chars; unbounded returns 54K+).
 - **OpenAI** jumped from B to A by using `tool_choice: { type: "web_search" }` to ensure search triggers, plus `include: ["web_search_call.action.sources"]` for 98 background sources.
 - **Tavily** jumped from D+ to B- by including result content alongside the thin answer. Speed is ~1.8s (the 170ms in earlier benchmarks was a Tavily response cache hit).
 - **Parallel** went from C- to B — 23K chars of excerpts when reading the `excerpts[]` array correctly.
@@ -147,7 +166,7 @@ Tavily's `search_depth` and `auto_parameters` significantly affect speed and con
 **Brave, Perplexity, Exa, Tavily, Parallel**
 
 Best for: quick lookups, structured results, agent workflows where latency matters.
-- **Perplexity** (505ms) has the richest content (35K chars) and best speed/quality ratio overall.
+- **Perplexity** (505ms) has rich content (~21K chars) and the best speed/quality ratio overall.
 - **Brave** (389ms) is the fastest and cheapest (free tier works) but shallowest content.
 - **Exa** (~1.5s) has excellent source selection and 19K chars of highlights.
 - **Tavily** (~1.8s) provides answer + result content; good for hybrid use cases.
@@ -162,7 +181,7 @@ Best for: synthesized answers, complex multi-source questions, research.
 - **Anthropic** (85s) provides exhaustive research with 30 real citations via multi-turn search. Slowest but most thorough.
 
 ### Recommended defaults by use case
-- **Best overall:** `perplexity` — A- quality at 505ms with 35K chars of content
+- **Best overall:** `perplexity` — A- quality at 505ms with ~21K chars of content
 - **Fastest:** `brave` (389ms) for basic results, `perplexity` (505ms) for rich content
 - **Best synthesized answer:** `openai` with `tool_choice` — A quality, 28 citations
 - **Best for research:** `anthropic` — most real citations, deepest analysis
@@ -193,7 +212,7 @@ Best for: synthesized answers, complex multi-source questions, research.
 - Quality graded on: completeness (30%), accuracy of specifics (25%), citation quality (25%), structure/usability (20%).
 - **Ratio** = Quality Score / Elapsed seconds. Measures quality per unit of wait time.
 - OpenAI uses `tool_choice: { type: "web_search" }` to force search and `include: ["web_search_call.action.sources"]`.
-- Perplexity uses the Search API (`/search`) with `max_tokens: 10000` and `max_tokens_per_page: 4096`.
+- Perplexity uses the Search API (`/search`) with `max_tokens: 4000` and `max_tokens_per_page: 2000` (~21K chars output).
 - Tavily speed corrected from cache-hit anomaly; representative speed is ~1.8s with `auto_parameters: true`.
 - Exa speed corrected from edge-cache anomaly; typical speed is ~1.5s.
 - Single query benchmark — results will vary across query types. A multi-query suite is planned.

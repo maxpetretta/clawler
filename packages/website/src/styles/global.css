@@ -864,13 +864,7 @@ body::before {
 
   .hood-grid { grid-template-columns: 1fr; }
 
-  .nav-links { display: none; }
-
-  .footer {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
+  .nav-links a:not(:last-child) { display: none; }
 }
 
 @media (max-width: 640px) {

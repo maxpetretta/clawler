@@ -282,6 +282,61 @@ describe("provider request builders", () => {
     })
   })
 
+  test("builds a Perplexity search request with explicit date and domain filters", () => {
+    const request = buildPerplexityRequest(
+      "latest openclaw updates",
+      {
+        freshness: "2026-03-01to2026-03-05",
+        includeDomains: ["openclaw.com"],
+        excludeDomains: ["example.com"],
+      },
+      {
+        apiKey: "perplexity-key",
+        apiMode: "search",
+        baseUrl: "https://api.perplexity.ai",
+        model: "sonar-pro",
+        maxTokens: 4000,
+        maxTokensPerPage: 2000,
+        timeoutSeconds: 30,
+        viaOpenRouter: false,
+      },
+    )
+
+    expect(request.body).toMatchObject({
+      search_after_date_filter: "03/01/2026",
+      search_before_date_filter: "03/05/2026",
+      search_domain_filter: ["openclaw.com", "-example.com"],
+    })
+  })
+
+  test("builds a Perplexity chat request with recency and include-domain filters", () => {
+    const request = buildPerplexityRequest(
+      "latest openclaw updates",
+      {
+        freshness: "pd",
+        includeDomains: ["openclaw.com"],
+      },
+      {
+        apiKey: "perplexity-key",
+        apiMode: "chat",
+        baseUrl: "https://api.perplexity.ai",
+        model: "sonar-pro",
+        maxTokens: 4000,
+        maxTokensPerPage: 2000,
+        timeoutSeconds: 30,
+        viaOpenRouter: false,
+      },
+    )
+
+    expect(request.url).toBe("https://api.perplexity.ai/chat/completions")
+    expect(request.body).toMatchObject({
+      web_search_options: {
+        search_recency_filter: "day",
+        search_domain_filter: ["openclaw.com"],
+      },
+    })
+  })
+
   test("falls back to Perplexity chat completions for OpenRouter", () => {
     const request = buildPerplexityRequest(
       "latest openclaw updates",

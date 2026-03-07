@@ -235,6 +235,55 @@ describe("provider search normalization", () => {
     expect(result.meta).toEqual({ webSearchQueries: ["query one", "query two"] })
   })
 
+  test("normalizes Gemini rendered-content citations with entity decoding and URL filtering", async () => {
+    const result = await geminiProvider.search(
+      "query",
+      {},
+      createContext({}, { GOOGLE_AI_API_KEY: "key" }, [
+        jsonResponse({
+          candidates: [
+            {
+              content: { parts: [{ text: "Part 1" }] },
+              groundingMetadata: {
+                searchEntryPoint: {
+                  renderedContent:
+                    '<a href="">Empty</a><a href="/relative">Relative</a><a href="javascript:alert(1)">Bad</a><a href="https://example.com/path?foo&#61;1&amp;bar&#x3D;2">Good</a>',
+                },
+              },
+            },
+          ],
+        }),
+      ]),
+    )
+
+    expect(result.citations).toEqual(["https://example.com/path?foo=1&bar=2"])
+  })
+
+  test("normalizes Gemini citations from supported grounding chunks when rendered content is unavailable", async () => {
+    const result = await geminiProvider.search(
+      "query",
+      {},
+      createContext({}, { GOOGLE_AI_API_KEY: "key" }, [
+        jsonResponse({
+          candidates: [
+            {
+              content: { parts: [{ text: "Part 1" }] },
+              groundingMetadata: {
+                groundingChunks: [
+                  { web: { uri: "https://ignored.example" } },
+                  { web: { uri: "https://supported.example" } },
+                ],
+                groundingSupports: [{ groundingChunkIndices: [1] }],
+              },
+            },
+          ],
+        }),
+      ]),
+    )
+
+    expect(result.citations).toEqual(["https://supported.example"])
+  })
+
   test("normalizes OpenAI chat-completions and responses modes", async () => {
     const chat = await openaiProvider.search(
       "query",

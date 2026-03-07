@@ -3,6 +3,15 @@ import { resolveConfig } from "../config"
 import { resolveSearchOptions } from "../tool"
 
 describe("config resolution", () => {
+  test("returns defaults when plugin config is missing or invalid", () => {
+    const config = resolveConfig(null)
+
+    expect(config.provider).toBe("auto")
+    expect(config.toolName).toBe("search_web")
+    expect(config.maxResults).toBe(5)
+    expect(config.fallback).toEqual([])
+  })
+
   test("reads shared search defaults from plugin config", () => {
     const config = resolveConfig({
       searchDefaults: {
@@ -117,6 +126,18 @@ describe("config resolution", () => {
     const config = resolveConfig({})
 
     expect(config.anthropic.maxTokens).toBe(4096)
+  })
+
+  test("filters invalid fallback providers and falls back to defaults when none remain", () => {
+    const mixed = resolveConfig({
+      fallback: ["exa", "auto", "unknown", "brave"],
+    })
+    const invalidOnly = resolveConfig({
+      fallback: ["auto", "unknown"],
+    })
+
+    expect(mixed.fallback).toEqual(["exa", "brave"])
+    expect(invalidOnly.fallback).toEqual([])
   })
 })
 

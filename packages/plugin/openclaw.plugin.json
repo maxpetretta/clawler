@@ -1,0 +1,236 @@
+{
+  "id": "better-search",
+  "name": "Better Search",
+  "kind": "tool",
+  "skills": ["./skills"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "provider": {
+        "type": "string",
+        "default": "auto",
+        "enum": ["auto", "brave", "exa", "tavily", "perplexity", "parallel", "gemini", "openai", "anthropic"]
+      },
+      "toolName": {
+        "type": "string",
+        "default": "better_search"
+      },
+      "maxResults": {
+        "type": "number",
+        "default": 5,
+        "minimum": 1,
+        "maximum": 20
+      },
+      "cacheTtlMinutes": {
+        "type": "number",
+        "default": 15,
+        "minimum": 0
+      },
+      "timeoutSeconds": {
+        "type": "number",
+        "default": 60,
+        "minimum": 1
+      },
+      "searchDefaults": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "freshness": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "searchLang": {
+            "type": "string"
+          },
+          "topic": {
+            "type": "string"
+          },
+          "includeDomains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excludeDomains": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "brave": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          }
+        }
+      },
+      "exa": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "default": "auto",
+            "enum": ["neural", "fast", "auto", "deep", "deep-reasoning", "instant"]
+          }
+        }
+      },
+      "tavily": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "searchDepth": {
+            "type": "string",
+            "default": "advanced",
+            "enum": ["basic", "advanced", "fast", "ultra-fast"]
+          },
+          "includeAnswer": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string",
+                "enum": ["basic", "advanced"]
+              }
+            ],
+            "default": true
+          },
+          "autoParameters": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "perplexity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "baseUrl": {
+            "type": "string",
+            "default": "https://api.perplexity.ai"
+          },
+          "model": {
+            "type": "string",
+            "default": "sonar-pro"
+          }
+        }
+      },
+      "parallel": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "default": "fast",
+            "enum": ["fast", "standard"]
+          },
+          "maxCharsPerResult": {
+            "type": "number",
+            "default": 1500,
+            "minimum": 100
+          }
+        }
+      },
+      "gemini": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string",
+            "default": "gemini-2.5-flash"
+          }
+        }
+      },
+      "openai": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "apiMode": {
+            "type": "string",
+            "default": "auto",
+            "enum": ["auto", "responses", "chat_completions_search"]
+          },
+          "model": {
+            "type": "string",
+            "default": "gpt-5-mini"
+          },
+          "chatCompletionsModel": {
+            "type": "string",
+            "default": "gpt-5-search-api"
+          },
+          "reasoningEffort": {
+            "type": "string",
+            "default": "low",
+            "enum": ["low", "medium", "high"]
+          },
+          "searchContextSize": {
+            "type": "string",
+            "default": "medium",
+            "enum": ["low", "medium", "high"]
+          },
+          "includeSources": {
+            "type": "boolean",
+            "default": true
+          },
+          "externalWebAccess": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "anthropic": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string",
+            "default": "claude-sonnet-4-6"
+          },
+          "toolVersion": {
+            "type": "string",
+            "default": "web_search_20260209",
+            "enum": ["web_search_20250305", "web_search_20260209"]
+          },
+          "maxUses": {
+            "type": "number",
+            "default": 5,
+            "minimum": 1
+          },
+          "directOnly": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,108 @@
+import type { BetterSearchConfig } from "../config"
+import { parseFreshness } from "./freshness"
+import { asSearchResultItem, buildPromptWithGuidance, normalizeDomains, requestJson, resolveApiKey } from "./shared"
+import type { SearchOptions, SearchProvider } from "./types"
+
+type ParallelResponse = {
+  results?: Array<{
+    title?: string
+    url?: string
+    publish_date?: string | null
+    excerpts?: string[]
+  }>
+}
+
+type ParallelRequestConfig = BetterSearchConfig["parallel"] & {
+  apiKey: string
+  timeoutSeconds: number
+}
+
+export function buildParallelRequest(query: string, options: SearchOptions, config: ParallelRequestConfig) {
+  const freshness = parseFreshness(options.freshness)
+  const body: Record<string, unknown> = {
+    objective: buildPromptWithGuidance(query, options, {
+      includeDomains: true,
+      excludeDomains: true,
+      freshness: false,
+    }),
+    search_queries: [query],
+    mode: config.mode,
+    max_results: options.maxResults ?? 5,
+    excerpts: {
+      max_chars_per_result: config.maxCharsPerResult,
+    },
+  }
+
+  const sourcePolicy: Record<string, unknown> = {}
+  const includeDomains = normalizeDomains(options.includeDomains)
+  const excludeDomains = normalizeDomains(options.excludeDomains)
+
+  if (includeDomains) {
+    sourcePolicy.include_domains = includeDomains
+  }
+
+  if (excludeDomains) {
+    sourcePolicy.exclude_domains = excludeDomains
+  }
+
+  if (freshness) {
+    sourcePolicy.after_date = freshness.afterDate
+  }
+
+  if (Object.keys(sourcePolicy).length > 0) {
+    body.source_policy = sourcePolicy
+  }
+
+  return {
+    url: "https://api.parallel.ai/v1beta/search",
+    method: "POST" as const,
+    headers: {
+      "content-type": "application/json",
+      "parallel-beta": "search-extract-2025-10-10",
+      "x-api-key": config.apiKey,
+    },
+    body,
+    timeoutSeconds: config.timeoutSeconds,
+  }
+}
+
+export const parallelProvider: SearchProvider = {
+  id: "parallel",
+  name: "Parallel",
+  envVars: ["PARALLEL_API_KEY"],
+  category: "traditional",
+  isAvailable(config, env = process.env) {
+    return Boolean(resolveApiKey(config, "parallel", env))
+  },
+  async search(query, options, context) {
+    const apiKey = resolveApiKey(context.config, "parallel", context.env)
+
+    if (!apiKey) {
+      throw new Error("Parallel is not configured.")
+    }
+
+    const request = buildParallelRequest(query, options, {
+      ...context.config.parallel,
+      apiKey,
+      timeoutSeconds: context.config.timeoutSeconds,
+    })
+    const response = await requestJson<ParallelResponse>("parallel", request.url, context, request)
+    const results =
+      response.results
+        ?.filter((entry) => Boolean(entry.url))
+        .map((entry) =>
+          asSearchResultItem({
+            title: entry.title ?? entry.url ?? "Untitled result",
+            url: entry.url ?? "",
+            snippet: entry.excerpts?.join(" ") ?? "",
+            publishedDate: entry.publish_date ?? undefined,
+          }),
+        ) ?? []
+
+    return {
+      provider: "parallel",
+      query,
+      results,
+    }
+  },
+}

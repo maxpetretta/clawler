@@ -61,6 +61,8 @@ export type BetterSearchConfig = {
     apiMode: PerplexityApiMode
     baseUrl: string
     model: string
+    maxTokens: number
+    maxTokensPerPage: number
   }
   parallel: ApiKeyConfig & {
     mode: ParallelSearchMode
@@ -120,6 +122,8 @@ const DEFAULT_CONFIG: BetterSearchConfig = {
     apiMode: "search",
     baseUrl: "https://api.perplexity.ai",
     model: "sonar-pro",
+    maxTokens: 10000,
+    maxTokensPerPage: 4096,
   },
   parallel: {
     mode: "one-shot",
@@ -196,6 +200,12 @@ export function resolveConfig(pluginConfig: unknown): BetterSearchConfig {
       apiMode: asPerplexityApiMode(readObject(record.perplexity)?.apiMode) ?? DEFAULT_CONFIG.perplexity.apiMode,
       baseUrl: asNonEmptyString(readObject(record.perplexity)?.baseUrl) ?? DEFAULT_CONFIG.perplexity.baseUrl,
       model: asNonEmptyString(readObject(record.perplexity)?.model) ?? DEFAULT_CONFIG.perplexity.model,
+      maxTokens:
+        asBoundedPositiveInteger(readObject(record.perplexity)?.maxTokens, 1, 1000000) ??
+        DEFAULT_CONFIG.perplexity.maxTokens,
+      maxTokensPerPage:
+        asBoundedPositiveInteger(readObject(record.perplexity)?.maxTokensPerPage, 1, 1000000) ??
+        DEFAULT_CONFIG.perplexity.maxTokensPerPage,
     },
     parallel: {
       apiKey: readApiKey(record.parallel),
@@ -492,6 +502,20 @@ export const betterSearchConfigSchema = {
         model: {
           type: "string",
           default: "sonar-pro",
+        },
+        maxTokens: {
+          type: "integer",
+          default: 10000,
+          minimum: 1,
+          maximum: 1000000,
+          description: "Maximum total tokens for search context (API default: 10000)",
+        },
+        maxTokensPerPage: {
+          type: "integer",
+          default: 4096,
+          minimum: 1,
+          maximum: 1000000,
+          description: "Maximum tokens per page snippet (API default: 4096)",
         },
       },
     },

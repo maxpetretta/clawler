@@ -47,6 +47,8 @@ function buildPerplexitySearchRequest(query: string, options: SearchOptions, con
     }),
     model: config.model,
     max_results: options.maxResults ?? 5,
+    max_tokens: config.maxTokens,
+    max_tokens_per_page: config.maxTokensPerPage,
   }
 
   if (options.country) {
@@ -60,8 +62,8 @@ function buildPerplexitySearchRequest(query: string, options: SearchOptions, con
   if (freshness?.kind === "relative") {
     body.search_recency_filter = freshness.perplexity
   } else if (freshness?.kind === "range") {
-    body.search_after_date_filter = toIsoDate(freshness.startDate)
-    body.search_before_date_filter = toIsoDate(freshness.endDate)
+    body.search_after_date_filter = toUsDate(freshness.startDate)
+    body.search_before_date_filter = toUsDate(freshness.endDate)
   }
 
   const domainFilter = buildSearchDomainFilter(includeDomains, excludeDomains)
@@ -146,9 +148,7 @@ function buildSearchDomainFilter(
   return [...(includeDomains ?? []), ...((excludeDomains ?? []).map((domain) => `-${domain}`))]
 }
 
-function toIsoDate(value: Date): string {
-  return value.toISOString().slice(0, 10)
-}
+
 
 export const perplexityProvider: SearchProvider = {
   id: "perplexity",

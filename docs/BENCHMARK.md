@@ -180,12 +180,22 @@ Best for: synthesized answers, complex multi-source questions, research.
 - **Gemini** (25s) produces thorough analysis but citations are redirect URLs — a known API limitation.
 - **Anthropic** (85s) provides exhaustive research with 30 real citations via multi-turn search. Slowest but most thorough.
 
-### Recommended defaults by use case
-- **Best overall:** `perplexity` — A- quality at 505ms with ~21K chars of content
+### Recommended configuration
+
+```jsonc
+{
+  "provider": "perplexity",  // or "auto" to use first available key
+  "fallback": ["exa", "brave"]
+}
+```
+
+### Recommended providers by use case
+- **Best overall (default):** `perplexity` — A- quality at 505ms with ~21K chars of content
 - **Fastest:** `brave` (389ms) for basic results, `perplexity` (505ms) for rich content
 - **Best synthesized answer:** `openai` with `tool_choice` — A quality, 28 citations
 - **Best for research:** `anthropic` — most real citations, deepest analysis
-- **Budget:** `brave` free tier (2K queries/month, no API cost)
+- **Best source selection:** `exa` — highest relevance highlights, ~17K chars
+- **Budget / no API keys:** `brave` free tier (2K queries/month, no API cost)
 
 ---
 

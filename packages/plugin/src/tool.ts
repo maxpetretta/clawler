@@ -1,8 +1,8 @@
 import { SearchCache } from "./cache"
 import type { ClawlerConfig } from "./config"
 import { formatSearchResult } from "./format"
-import { resolveProvider } from "./providers/registry"
-import { isProviderId, type ProviderId, providerIds, type SearchOptions } from "./providers/types"
+import { getProviderById, resolveProvider } from "./providers/registry"
+import { isProviderId, type ProviderId, providerIds, type SearchOptions, type SearchProvider } from "./providers/types"
 
 type ClawlerToolParams = {
   query: string
@@ -71,15 +71,28 @@ export function createClawlerTool(config: ClawlerConfig) {
         return cached
       }
 
-      const result = await provider.search(query, options, {
-        config,
-        env,
-        fetch: globalThis.fetch,
-      })
-      const formatted = formatSearchResult(result)
+      // Per-call provider param skips fallback chain
+      const fallbackChain = params.provider ? [] : config.fallback
+      const errors: string[] = []
 
-      cache.set(cacheKey, formatted)
-      return formatted
+      for (const target of [provider, ...resolveFallbackProviders(config, env, fallbackChain)]) {
+        try {
+          const result = await target.search(query, options, {
+            config,
+            env,
+            fetch: globalThis.fetch,
+          })
+          const formatted = formatSearchResult(result)
+          const key = buildCacheKey(target.id, query, options)
+
+          cache.set(key, formatted)
+          return formatted
+        } catch (err) {
+          errors.push(`${target.id}: ${err instanceof Error ? err.message : String(err)}`)
+        }
+      }
+
+      throw new Error(`All providers failed:\n${errors.join("\n")}`)
     },
   }
 }
@@ -98,6 +111,27 @@ export function resolveSearchOptions(config: ClawlerConfig, params: ClawlerToolP
 
 function buildCacheKey(providerId: string, query: string, options: SearchOptions): string {
   return `${providerId}:${query}:${stableStringify(options)}`
+}
+
+function resolveFallbackProviders(
+  config: ClawlerConfig,
+  env: Record<string, string | undefined>,
+  fallbackIds: ProviderId[],
+): SearchProvider[] {
+  const providers: SearchProvider[] = []
+
+  for (const id of fallbackIds) {
+    try {
+      const provider = getProviderById(id)
+      if (provider.isAvailable(config, env)) {
+        providers.push(provider)
+      }
+    } catch {
+      // Unknown provider ID — skip
+    }
+  }
+
+  return providers
 }
 
 function stableStringify(value: unknown): string {

@@ -11,11 +11,11 @@ import { tavilyProvider } from "./tavily"
 import type { ProviderId, ProviderStatus, SearchProvider } from "./types"
 
 export const providersInPriorityOrder = [
+  perplexityProvider,
   exaProvider,
   tavilyProvider,
-  braveProvider,
   parallelProvider,
-  perplexityProvider,
+  braveProvider,
   openaiProvider,
   anthropicProvider,
   geminiProvider,

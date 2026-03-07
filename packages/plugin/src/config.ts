@@ -35,6 +35,7 @@ export type ClawlerSharedOptions = {
 
 export type ClawlerConfig = {
   provider: ClawlerProviderSelection
+  fallback: ProviderId[]
   toolName: string
   maxResults: number
   cacheTtlMinutes: number
@@ -100,6 +101,7 @@ export type ClawlerConfig = {
 
 const DEFAULT_CONFIG: ClawlerConfig = {
   provider: "auto",
+  fallback: [],
   toolName: "search_web",
   maxResults: 5,
   cacheTtlMinutes: 15,
@@ -160,6 +162,7 @@ export function resolveConfig(pluginConfig: unknown): ClawlerConfig {
 
   return {
     provider: isProviderSelection(record.provider) ? record.provider : DEFAULT_CONFIG.provider,
+    fallback: asProviderIdArray(record.fallback) ?? DEFAULT_CONFIG.fallback,
     toolName: asNonEmptyString(record.toolName) ?? DEFAULT_CONFIG.toolName,
     maxResults: asBoundedPositiveInteger(record.maxResults, 1, 20) ?? DEFAULT_CONFIG.maxResults,
     cacheTtlMinutes: asBoundedPositiveInteger(record.cacheTtlMinutes, 0) ?? DEFAULT_CONFIG.cacheTtlMinutes,
@@ -299,6 +302,16 @@ function isProviderSelection(value: unknown): value is ClawlerProviderSelection 
   )
 }
 
+function isProviderId(value: unknown): value is ProviderId {
+  return isProviderSelection(value) && value !== "auto"
+}
+
+function asProviderIdArray(value: unknown): ProviderId[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const ids = value.filter(isProviderId)
+  return ids.length > 0 ? ids : undefined
+}
+
 function asExaSearchType(value: unknown): ExaSearchType | undefined {
   return value === "neural" ||
     value === "fast" ||
@@ -379,6 +392,15 @@ export const clawlerConfigSchema = {
       type: "string",
       default: "auto",
       enum: ["auto", "brave", "exa", "tavily", "perplexity", "parallel", "gemini", "openai", "anthropic"],
+    },
+    fallback: {
+      type: "array",
+      items: {
+        type: "string",
+        enum: ["brave", "exa", "tavily", "perplexity", "parallel", "gemini", "openai", "anthropic"],
+      },
+      default: [],
+      description: "Fallback providers tried in order if the primary fails. Only errors trigger fallback; empty results are valid. Per-call provider param skips fallback.",
     },
     toolName: {
       type: "string",

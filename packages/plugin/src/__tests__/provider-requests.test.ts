@@ -33,9 +33,27 @@ describe("provider request builders", () => {
     expect(url.hostname).toBe("api.search.brave.com")
     expect(url.searchParams.get("q")).toContain("site:openclaw.com")
     expect(url.searchParams.get("count")).toBe("7")
+    expect(url.searchParams.get("extra_snippets")).toBe("true")
+    expect(url.searchParams.get("enable_rich_callback")).toBe("1")
     expect(url.searchParams.get("freshness")).toBe("pw")
     expect(url.searchParams.get("country")).toBe("US")
     expect(request.headers["X-Subscription-Token"]).toBe("brave-key")
+  })
+
+  test("builds a Brave request with safesearch and optional rich callbacks disabled", () => {
+    const config = resolveConfig({
+      brave: {
+        enableRichResults: false,
+        safesearch: "strict",
+      },
+    })
+
+    const request = buildBraveRequest("openclaw plugins", {}, "brave-key", 30, config.brave)
+
+    const url = new URL(request.url)
+    expect(url.searchParams.get("extra_snippets")).toBe("true")
+    expect(url.searchParams.get("enable_rich_callback")).toBeNull()
+    expect(url.searchParams.get("safesearch")).toBe("strict")
   })
 
   test("builds an Exa search request with dates and domains", () => {
@@ -61,6 +79,11 @@ describe("provider request builders", () => {
       query: "ai search",
       type: "auto",
       numResults: 5,
+      contents: {
+        highlights: {
+          maxCharacters: 4000,
+        },
+      },
       category: "news",
       includeDomains: ["exa.ai"],
       excludeDomains: ["example.com"],
@@ -69,7 +92,7 @@ describe("provider request builders", () => {
     })
   })
 
-  test("builds an Exa request for finance searches", () => {
+  test("falls back to the finance topic category for Exa", () => {
     const request = buildExaRequest(
       "earnings",
       {
@@ -84,6 +107,33 @@ describe("provider request builders", () => {
 
     expect(request.body).toMatchObject({
       category: "financial report",
+    })
+  })
+
+  test("uses explicit Exa category and maxAgeHours when configured", () => {
+    const config = resolveConfig({
+      exa: {
+        type: "auto",
+        category: "company",
+        maxAgeHours: 24,
+      },
+    })
+
+    const request = buildExaRequest(
+      "earnings",
+      {
+        topic: "finance",
+      },
+      {
+        ...config.exa,
+        apiKey: "exa-key",
+        timeoutSeconds: 30,
+      },
+    )
+
+    expect(request.body).toMatchObject({
+      category: "company",
+      maxAgeHours: 24,
     })
   })
 
@@ -111,6 +161,7 @@ describe("provider request builders", () => {
       api_key: "tavily-key",
       query: "openclaw search",
       search_depth: config.tavily.searchDepth,
+      chunks_per_source: 3,
       max_results: 4,
       include_answer: config.tavily.includeAnswer,
       auto_parameters: config.tavily.autoParameters,
@@ -142,15 +193,71 @@ describe("provider request builders", () => {
     })
   })
 
-  test("builds a Perplexity chat completion request", () => {
+  test("builds a Tavily chunk request with raw content and exact match", () => {
+    const config = resolveConfig({
+      tavily: {
+        searchDepth: "fast",
+        chunksPerSource: 5,
+        includeRawContent: true,
+        exactMatch: true,
+      },
+    })
+    const longQuery = `${"alpha ".repeat(66)}betagamma`
+    const expectedQuery = `${"alpha ".repeat(66)}`.trimEnd()
+
+    const request = buildTavilyRequest(
+      longQuery,
+      {},
+      {
+        ...config.tavily,
+        apiKey: "tavily-key",
+        timeoutSeconds: 30,
+      },
+    )
+
+    expect(request.body).toMatchObject({
+      query: expectedQuery,
+      search_depth: "fast",
+      chunks_per_source: 5,
+      include_raw_content: true,
+      exact_match: true,
+    })
+  })
+
+  test("omits Tavily chunk settings for non-chunk depths", () => {
+    const config = resolveConfig({
+      tavily: {
+        searchDepth: "basic",
+        chunksPerSource: 9,
+      },
+    })
+
+    const request = buildTavilyRequest(
+      "openclaw search",
+      {},
+      {
+        ...config.tavily,
+        apiKey: "tavily-key",
+        timeoutSeconds: 30,
+      },
+    )
+
+    expect(request.body).not.toHaveProperty("chunks_per_source")
+  })
+
+  test("builds a Perplexity search request", () => {
     const request = buildPerplexityRequest(
       "latest openclaw updates",
       {
+        maxResults: 7,
         freshness: "pm",
+        country: "us",
+        searchLang: "en",
         includeDomains: ["openclaw.com"],
       },
       {
         apiKey: "perplexity-key",
+        apiMode: "search",
         baseUrl: "https://api.perplexity.ai",
         model: "sonar-pro",
         timeoutSeconds: 30,
@@ -158,18 +265,20 @@ describe("provider request builders", () => {
       },
     )
 
-    expect(request.url).toBe("https://api.perplexity.ai/chat/completions")
+    expect(request.url).toBe("https://api.perplexity.ai/search")
     expect(request.headers.Authorization).toBe("Bearer perplexity-key")
     expect(request.body).toMatchObject({
+      query: "latest openclaw updates",
       model: "sonar-pro",
-      web_search_options: {
-        search_recency_filter: "month",
-        search_domain_filter: ["openclaw.com"],
-      },
+      max_results: 7,
+      country: "us",
+      search_language_filter: "en",
+      search_recency_filter: "month",
+      search_domain_filter: ["openclaw.com"],
     })
   })
 
-  test("builds a Perplexity exclude-domain range request", () => {
+  test("falls back to Perplexity chat completions for OpenRouter", () => {
     const request = buildPerplexityRequest(
       "latest openclaw updates",
       {
@@ -178,6 +287,7 @@ describe("provider request builders", () => {
       },
       {
         apiKey: "perplexity-key",
+        apiMode: "search",
         baseUrl: "https://api.perplexity.ai",
         model: "sonar-pro",
         timeoutSeconds: 30,
@@ -185,6 +295,7 @@ describe("provider request builders", () => {
       },
     )
 
+    expect(request.url).toBe("https://api.perplexity.ai/chat/completions")
     expect(request.body).toMatchObject({
       model: "perplexity/sonar-pro",
       web_search_options: {
@@ -202,6 +313,7 @@ describe("provider request builders", () => {
       {},
       {
         apiKey: "perplexity-key",
+        apiMode: "chat",
         baseUrl: "https://openrouter.ai/api/v1",
         model: "perplexity/sonar-pro",
         timeoutSeconds: 30,
@@ -217,8 +329,10 @@ describe("provider request builders", () => {
   test("builds a Parallel search request", () => {
     const config = resolveConfig({
       parallel: {
-        mode: "fast",
+        mode: "one-shot",
         maxCharsPerResult: 2000,
+        maxCharsTotal: 12000,
+        maxAgeSeconds: 1800,
       },
     })
     const request = buildParallelRequest(
@@ -238,9 +352,13 @@ describe("provider request builders", () => {
     expect(request.headers["parallel-beta"]).toBe("search-extract-2025-10-10")
     expect(request.body).toMatchObject({
       search_queries: ["agent search"],
-      mode: "fast",
+      mode: "one-shot",
       excerpts: {
         max_chars_per_result: 2000,
+        max_chars_total: 12000,
+      },
+      fetch_policy: {
+        max_age_seconds: 1800,
       },
       source_policy: {
         include_domains: ["parallel.ai"],
@@ -271,6 +389,32 @@ describe("provider request builders", () => {
     })
   })
 
+  test("builds a Gemini grounded search request with dynamic retrieval", () => {
+    const request = buildGeminiRequest(
+      "search this",
+      {},
+      {
+        apiKey: "gemini-key",
+        model: "gemini-2.5-flash",
+        dynamicThreshold: 0.5,
+        timeoutSeconds: 30,
+      },
+    )
+
+    expect(request.body).toMatchObject({
+      tools: [
+        {
+          google_search: {
+            dynamic_retrieval_config: {
+              mode: "MODE_DYNAMIC",
+              dynamic_threshold: 0.5,
+            },
+          },
+        },
+      ],
+    })
+  })
+
   test("builds an OpenAI responses request", () => {
     const request = buildOpenAIResponsesRequest(
       "who won yesterday",
@@ -288,6 +432,9 @@ describe("provider request builders", () => {
         searchContextSize: "medium",
         includeSources: true,
         externalWebAccess: true,
+        city: "Detroit",
+        region: "California",
+        timezone: "America/Los_Angeles",
         timeoutSeconds: 30,
       },
     )
@@ -311,11 +458,43 @@ describe("provider request builders", () => {
           user_location: {
             type: "approximate",
             country: "US",
+            city: "Detroit",
+            region: "California",
+            timezone: "America/Los_Angeles",
           },
         },
       ],
       include: ["web_search_call.action.sources"],
     })
+  })
+
+  test("omits OpenAI user_location when no location fields are set", () => {
+    const request = buildOpenAIResponsesRequest(
+      "who won yesterday",
+      {},
+      {
+        apiKey: "openai-key",
+        apiMode: "responses",
+        model: "gpt-5",
+        chatCompletionsModel: "gpt-5-search-api",
+        reasoningEffort: "low",
+        searchContextSize: "medium",
+        includeSources: true,
+        externalWebAccess: true,
+        timeoutSeconds: 30,
+      },
+    )
+
+    expect(request.body).toMatchObject({
+      tools: [
+        {
+          type: "web_search",
+          search_context_size: "medium",
+          external_web_access: true,
+        },
+      ],
+    })
+    expect((request.body as { tools: Array<Record<string, unknown>> }).tools[0]?.user_location).toBeUndefined()
   })
 
   test("builds an OpenAI chat completions search request", () => {
@@ -360,8 +539,12 @@ describe("provider request builders", () => {
         apiKey: "anthropic-key",
         model: "claude-sonnet-4-6",
         toolVersion: "web_search_20260209",
+        maxTokens: 2048,
         maxUses: 5,
         directOnly: true,
+        city: "San Francisco",
+        region: "California",
+        timezone: "America/Los_Angeles",
         timeoutSeconds: 30,
       },
     )
@@ -370,6 +553,7 @@ describe("provider request builders", () => {
     expect(request.headers["x-api-key"]).toBe("anthropic-key")
     expect(request.body).toMatchObject({
       model: "claude-sonnet-4-6",
+      max_tokens: 2048,
       tools: [
         {
           type: "web_search_20260209",
@@ -379,14 +563,17 @@ describe("provider request builders", () => {
           blocked_domains: ["example.com"],
           user_location: {
             type: "approximate",
+            city: "San Francisco",
+            region: "California",
             country: "US",
+            timezone: "America/Los_Angeles",
           },
         },
       ],
     })
   })
 
-  test("prefers Anthropic allowed domains when both allow and deny lists are provided", () => {
+  test("sets both Anthropic allow and deny lists when both are provided", () => {
     const request = buildAnthropicRequest(
       "find docs",
       {
@@ -397,6 +584,7 @@ describe("provider request builders", () => {
         apiKey: "anthropic-key",
         model: "claude-sonnet-4-6",
         toolVersion: "web_search_20260209",
+        maxTokens: 4096,
         maxUses: 5,
         directOnly: true,
         timeoutSeconds: 30,
@@ -407,6 +595,7 @@ describe("provider request builders", () => {
       tools: [
         {
           allowed_domains: ["anthropic.com"],
+          blocked_domains: ["example.com"],
         },
       ],
     })
@@ -422,6 +611,7 @@ describe("provider request builders", () => {
         apiKey: "anthropic-key",
         model: "claude-sonnet-4-6",
         toolVersion: "web_search_20260209",
+        maxTokens: 4096,
         maxUses: 5,
         directOnly: true,
         timeoutSeconds: 30,

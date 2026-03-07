@@ -67,6 +67,40 @@ describe("provider search normalization", () => {
     ])
   })
 
+  test("fetches Brave rich results into meta when callback data is available", async () => {
+    const result = await braveProvider.search(
+      "AAPL",
+      {},
+      createContext({}, { BRAVE_API_KEY: "key" }, [
+        jsonResponse({
+          web: {
+            results: [{ title: "Apple", url: "https://example.com", description: "stock quote" }],
+          },
+          rich: {
+            type: "stock",
+            hint: {
+              vertical: "stocks",
+              callback_key: "cb_123",
+            },
+          },
+        }),
+        jsonResponse({
+          type: "stock",
+          symbol: "AAPL",
+          price: 250.12,
+        }),
+      ]),
+    )
+
+    expect(result.meta).toEqual({
+      rich: {
+        type: "stock",
+        symbol: "AAPL",
+        price: 250.12,
+      },
+    })
+  })
+
   test("normalizes Exa results", async () => {
     const result = await exaProvider.search(
       "query",
@@ -105,11 +139,21 @@ describe("provider search normalization", () => {
     expect(result.results?.[0]).toMatchObject({ snippet: "body" })
   })
 
-  test("normalizes Perplexity direct and OpenRouter responses", async () => {
+  test("normalizes Perplexity search, chat, and OpenRouter responses", async () => {
     const direct = await perplexityProvider.search(
       "query",
       {},
       createContext({}, { PERPLEXITY_API_KEY: "key" }, [
+        jsonResponse({
+          results: [{ title: "Title", url: "https://example.com", snippet: "body", date: "2026-03-01" }],
+        }),
+      ]),
+    )
+
+    const chat = await perplexityProvider.search(
+      "query",
+      {},
+      createContext({ perplexity: { apiMode: "chat" } }, { PERPLEXITY_API_KEY: "key" }, [
         jsonResponse({
           choices: [{ message: { content: " answer " } }],
           citations: ["https://example.com", "https://example.com"],
@@ -126,9 +170,11 @@ describe("provider search normalization", () => {
       ]),
     )
 
-    expect(direct.answer).toBe("answer")
+    expect(direct.answer).toBeUndefined()
     expect(direct.citations).toEqual(["https://example.com"])
     expect(direct.results?.[0]).toMatchObject({ title: "Title", publishedDate: "2026-03-01" })
+    expect(chat.answer).toBe("answer")
+    expect(chat.citations).toEqual(["https://example.com"])
     expect(router.answer).toBe("router")
   })
 
@@ -161,7 +207,22 @@ describe("provider search normalization", () => {
             {
               content: { parts: [{ text: "Part 1" }, { text: "Part 2" }] },
               groundingMetadata: {
-                groundingChunks: [{ web: { uri: "https://example.com" } }, { web: { uri: "https://example.com" } }],
+                groundingChunks: [
+                  { web: { uri: "https://vertexaisearch.cloud.google.com/grounding-api-redirect/one" } },
+                  { web: { uri: "https://vertexaisearch.cloud.google.com/grounding-api-redirect/two" } },
+                ],
+                groundingSupports: [
+                  {
+                    segment: { text: "Part 1" },
+                    groundingChunkIndices: [0, 1],
+                    confidenceScores: [0.9, 0.8],
+                  },
+                ],
+                searchEntryPoint: {
+                  renderedContent:
+                    '<a href="https://example.com/article?ref=1&amp;lang=en">Example</a><a href="https://second.example/path">Second</a>',
+                },
+                webSearchQueries: ["query one", "query one", "query two"],
               },
             },
           ],
@@ -170,7 +231,8 @@ describe("provider search normalization", () => {
     )
 
     expect(result.answer).toBe("Part 1\nPart 2")
-    expect(result.citations).toEqual(["https://example.com"])
+    expect(result.citations).toEqual(["https://example.com/article?ref=1&lang=en", "https://second.example/path"])
+    expect(result.meta).toEqual({ webSearchQueries: ["query one", "query two"] })
   })
 
   test("normalizes OpenAI chat-completions and responses modes", async () => {
@@ -190,7 +252,16 @@ describe("provider search normalization", () => {
               {
                 message: {
                   content: " answer ",
-                  annotations: [{ url_citation: { url: "https://example.com" } }],
+                  annotations: [
+                    {
+                      url_citation: {
+                        url: "https://example.com",
+                        title: "Example",
+                        start_index: 0,
+                        end_index: 6,
+                      },
+                    },
+                  ],
                 },
               },
             ],
@@ -220,7 +291,20 @@ describe("provider search normalization", () => {
               },
               {
                 type: "message",
-                content: [{ text: "A" }, { text: "B", annotations: [{ url: "https://message.example" }] }],
+                content: [
+                  { text: "A" },
+                  {
+                    text: "B",
+                    annotations: [
+                      {
+                        url: "https://message.example",
+                        title: "Message Source",
+                        start_index: 0,
+                        end_index: 1,
+                      },
+                    ],
+                  },
+                ],
               },
             ],
           }),
@@ -229,34 +313,71 @@ describe("provider search normalization", () => {
     )
 
     expect(chat.answer).toBe("answer")
-    expect(chat.citations).toEqual(["https://example.com"])
+    expect(chat.citations).toEqual(["Example — https://example.com"])
     expect(responses.answer).toBe("A\nB")
-    expect(responses.citations).toEqual(["https://message.example", "https://source.example"])
+    expect(responses.citations).toEqual(["Message Source — https://message.example", "https://source.example"])
   })
 
-  test("normalizes Anthropic responses and follows pause_turn", async () => {
+  test("normalizes Anthropic responses across multiple pause_turn continuations", async () => {
     const result = await anthropicProvider.search(
       "query",
       {},
       createContext({}, { ANTHROPIC_API_KEY: "key" }, [
         jsonResponse({
           stop_reason: "pause_turn",
-          content: [{ type: "text", text: "intermediate", citations: [{ url: "https://ignore.example" }] }],
+          content: [
+            { type: "text", text: "intermediate", citations: [{ url: "https://inline-one.example" }] },
+            {
+              type: "web_search_tool_result",
+              content: [
+                { url: "https://search-one.example", title: "Search One", text: "one" },
+                { url: "https://search-two.example", title: "Search Two", text: "two" },
+              ],
+            },
+          ],
+        }),
+        jsonResponse({
+          stop_reason: "pause_turn",
+          content: [
+            { type: "text", text: "more", citations: [{ url: "https://inline-two.example" }] },
+            {
+              type: "web_search_tool_result",
+              content: [
+                { url: "https://search-two.example", title: "Search Two", text: "two" },
+                { url: "https://search-three.example", title: "Search Three", text: "three" },
+              ],
+            },
+          ],
         }),
         jsonResponse({
           content: [
             {
               type: "text",
               text: "answer",
-              citations: [{ url: "https://example.com" }, { url: "https://example.com" }],
+              citations: [{ url: "https://inline-two.example" }, { url: "https://final.example" }],
+            },
+            {
+              type: "web_search_tool_result",
+              content: [
+                { url: "https://search-three.example", title: "Search Three", text: "three" },
+                { url: "https://search-four.example", title: "Search Four", text: "four" },
+              ],
             },
           ],
         }),
       ]),
     )
 
-    expect(result.answer).toBe("answer")
-    expect(result.citations).toEqual(["https://example.com"])
+    expect(result.answer).toBe("intermediate\nmore\nanswer")
+    expect(result.citations).toEqual([
+      "https://inline-one.example",
+      "https://search-one.example",
+      "https://search-two.example",
+      "https://inline-two.example",
+      "https://search-three.example",
+      "https://final.example",
+      "https://search-four.example",
+    ])
   })
 })
 

@@ -68,6 +68,14 @@
         "properties": {
           "apiKey": {
             "type": "string"
+          },
+          "enableRichResults": {
+            "type": "boolean",
+            "default": true
+          },
+          "safesearch": {
+            "type": "string",
+            "enum": ["off", "moderate", "strict"]
           }
         }
       },
@@ -82,6 +90,14 @@
             "type": "string",
             "default": "auto",
             "enum": ["neural", "fast", "auto", "deep", "deep-reasoning", "instant"]
+          },
+          "category": {
+            "type": "string",
+            "enum": ["company", "people", "research paper", "news", "tweet", "personal site", "financial report"]
+          },
+          "maxAgeHours": {
+            "type": "integer",
+            "minimum": -1
           }
         }
       },
@@ -112,6 +128,18 @@
           "autoParameters": {
             "type": "boolean",
             "default": true
+          },
+          "chunksPerSource": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "includeRawContent": {
+            "type": "boolean",
+            "default": false
+          },
+          "exactMatch": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -121,6 +149,11 @@
         "properties": {
           "apiKey": {
             "type": "string"
+          },
+          "apiMode": {
+            "type": "string",
+            "default": "search",
+            "enum": ["search", "chat"]
           },
           "baseUrl": {
             "type": "string",

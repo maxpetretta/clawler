@@ -2,13 +2,23 @@ import type { ProviderId } from "./providers/types"
 
 export type BetterSearchProviderSelection = ProviderId | "auto"
 export type ExaSearchType = "neural" | "fast" | "auto" | "deep" | "deep-reasoning" | "instant"
+export type ExaCategory =
+  | "company"
+  | "people"
+  | "research paper"
+  | "news"
+  | "tweet"
+  | "personal site"
+  | "financial report"
 export type TavilySearchDepth = "basic" | "advanced" | "fast" | "ultra-fast"
 export type TavilyAnswerMode = boolean | "basic" | "advanced"
-export type ParallelSearchMode = "fast" | "standard"
+export type ParallelSearchMode = string
 export type AnthropicToolVersion = "web_search_20250305" | "web_search_20260209"
 export type OpenAIReasoningEffort = "low" | "medium" | "high"
 export type OpenAISearchContextSize = "low" | "medium" | "high"
 export type OpenAIApiMode = "auto" | "responses" | "chat_completions_search"
+export type PerplexityApiMode = "search" | "chat"
+export type BraveSafeSearch = "off" | "moderate" | "strict"
 
 type ApiKeyConfig = {
   apiKey?: string
@@ -30,25 +40,37 @@ export type BetterSearchConfig = {
   cacheTtlMinutes: number
   timeoutSeconds: number
   searchDefaults: BetterSearchSharedOptions
-  brave: ApiKeyConfig
+  brave: ApiKeyConfig & {
+    enableRichResults: boolean
+    safesearch?: BraveSafeSearch
+  }
   exa: ApiKeyConfig & {
     type: ExaSearchType
+    category?: ExaCategory
+    maxAgeHours?: number
   }
   tavily: ApiKeyConfig & {
     searchDepth: TavilySearchDepth
     includeAnswer: TavilyAnswerMode
     autoParameters: boolean
+    chunksPerSource?: number
+    includeRawContent?: boolean
+    exactMatch?: boolean
   }
   perplexity: ApiKeyConfig & {
+    apiMode: PerplexityApiMode
     baseUrl: string
     model: string
   }
   parallel: ApiKeyConfig & {
     mode: ParallelSearchMode
     maxCharsPerResult: number
+    maxCharsTotal: number
+    maxAgeSeconds?: number
   }
   gemini: ApiKeyConfig & {
     model: string
+    dynamicThreshold?: number
   }
   openai: ApiKeyConfig & {
     apiMode: OpenAIApiMode
@@ -58,12 +80,19 @@ export type BetterSearchConfig = {
     searchContextSize: OpenAISearchContextSize
     includeSources: boolean
     externalWebAccess: boolean
+    city?: string
+    region?: string
+    timezone?: string
   }
   anthropic: ApiKeyConfig & {
     model: string
     toolVersion: AnthropicToolVersion
+    maxTokens: number
     maxUses: number
     directOnly: boolean
+    city?: string
+    region?: string
+    timezone?: string
   }
 }
 
@@ -74,7 +103,9 @@ const DEFAULT_CONFIG: BetterSearchConfig = {
   cacheTtlMinutes: 15,
   timeoutSeconds: 60,
   searchDefaults: {},
-  brave: {},
+  brave: {
+    enableRichResults: true,
+  },
   exa: {
     type: "auto",
   },
@@ -82,14 +113,18 @@ const DEFAULT_CONFIG: BetterSearchConfig = {
     searchDepth: "advanced",
     includeAnswer: true,
     autoParameters: true,
+    includeRawContent: false,
+    exactMatch: false,
   },
   perplexity: {
+    apiMode: "search",
     baseUrl: "https://api.perplexity.ai",
     model: "sonar-pro",
   },
   parallel: {
-    mode: "fast",
-    maxCharsPerResult: 1500,
+    mode: "one-shot",
+    maxCharsPerResult: 5000,
+    maxCharsTotal: 50000,
   },
   gemini: {
     model: "gemini-2.5-flash",
@@ -106,6 +141,7 @@ const DEFAULT_CONFIG: BetterSearchConfig = {
   anthropic: {
     model: "claude-sonnet-4-6",
     toolVersion: "web_search_20260209",
+    maxTokens: 4096,
     maxUses: 5,
     directOnly: true,
   },
@@ -134,10 +170,15 @@ export function resolveConfig(pluginConfig: unknown): BetterSearchConfig {
     },
     brave: {
       apiKey: readApiKey(record.brave),
+      enableRichResults:
+        asBoolean(readObject(record.brave)?.enableRichResults) ?? DEFAULT_CONFIG.brave.enableRichResults,
+      safesearch: asBraveSafeSearch(readObject(record.brave)?.safesearch),
     },
     exa: {
       apiKey: readApiKey(record.exa),
       type: asExaSearchType(readObject(record.exa)?.type) ?? DEFAULT_CONFIG.exa.type,
+      category: asExaCategory(readObject(record.exa)?.category),
+      maxAgeHours: asBoundedInteger(readObject(record.exa)?.maxAgeHours, -1),
     },
     tavily: {
       apiKey: readApiKey(record.tavily),
@@ -145,9 +186,14 @@ export function resolveConfig(pluginConfig: unknown): BetterSearchConfig {
       includeAnswer:
         asTavilyAnswerMode(readObject(record.tavily)?.includeAnswer) ?? DEFAULT_CONFIG.tavily.includeAnswer,
       autoParameters: asBoolean(readObject(record.tavily)?.autoParameters) ?? DEFAULT_CONFIG.tavily.autoParameters,
+      chunksPerSource: asBoundedPositiveInteger(readObject(record.tavily)?.chunksPerSource, 1),
+      includeRawContent:
+        asBoolean(readObject(record.tavily)?.includeRawContent) ?? DEFAULT_CONFIG.tavily.includeRawContent,
+      exactMatch: asBoolean(readObject(record.tavily)?.exactMatch) ?? DEFAULT_CONFIG.tavily.exactMatch,
     },
     perplexity: {
       apiKey: readApiKey(record.perplexity),
+      apiMode: asPerplexityApiMode(readObject(record.perplexity)?.apiMode) ?? DEFAULT_CONFIG.perplexity.apiMode,
       baseUrl: asNonEmptyString(readObject(record.perplexity)?.baseUrl) ?? DEFAULT_CONFIG.perplexity.baseUrl,
       model: asNonEmptyString(readObject(record.perplexity)?.model) ?? DEFAULT_CONFIG.perplexity.model,
     },
@@ -157,10 +203,15 @@ export function resolveConfig(pluginConfig: unknown): BetterSearchConfig {
       maxCharsPerResult:
         asBoundedPositiveInteger(readObject(record.parallel)?.maxCharsPerResult, 100) ??
         DEFAULT_CONFIG.parallel.maxCharsPerResult,
+      maxCharsTotal:
+        asBoundedPositiveInteger(readObject(record.parallel)?.maxCharsTotal, 100) ??
+        DEFAULT_CONFIG.parallel.maxCharsTotal,
+      maxAgeSeconds: asBoundedPositiveInteger(readObject(record.parallel)?.maxAgeSeconds, 1),
     },
     gemini: {
       apiKey: readApiKey(record.gemini),
       model: asNonEmptyString(readObject(record.gemini)?.model) ?? DEFAULT_CONFIG.gemini.model,
+      dynamicThreshold: asBoundedNumber(readObject(record.gemini)?.dynamicThreshold, 0, 1),
     },
     openai: {
       apiKey: readApiKey(record.openai),
@@ -176,14 +227,22 @@ export function resolveConfig(pluginConfig: unknown): BetterSearchConfig {
       includeSources: asBoolean(readObject(record.openai)?.includeSources) ?? DEFAULT_CONFIG.openai.includeSources,
       externalWebAccess:
         asBoolean(readObject(record.openai)?.externalWebAccess) ?? DEFAULT_CONFIG.openai.externalWebAccess,
+      city: asNonEmptyString(readObject(record.openai)?.city),
+      region: asNonEmptyString(readObject(record.openai)?.region),
+      timezone: asNonEmptyString(readObject(record.openai)?.timezone),
     },
     anthropic: {
       apiKey: readApiKey(record.anthropic),
       model: asNonEmptyString(readObject(record.anthropic)?.model) ?? DEFAULT_CONFIG.anthropic.model,
       toolVersion:
         asAnthropicToolVersion(readObject(record.anthropic)?.toolVersion) ?? DEFAULT_CONFIG.anthropic.toolVersion,
+      maxTokens:
+        asBoundedPositiveInteger(readObject(record.anthropic)?.maxTokens, 1) ?? DEFAULT_CONFIG.anthropic.maxTokens,
       maxUses: asBoundedPositiveInteger(readObject(record.anthropic)?.maxUses, 1) ?? DEFAULT_CONFIG.anthropic.maxUses,
       directOnly: asBoolean(readObject(record.anthropic)?.directOnly) ?? DEFAULT_CONFIG.anthropic.directOnly,
+      city: asNonEmptyString(readObject(record.anthropic)?.city),
+      region: asNonEmptyString(readObject(record.anthropic)?.region),
+      timezone: asNonEmptyString(readObject(record.anthropic)?.timezone),
     },
   }
 }
@@ -206,6 +265,14 @@ function asNonEmptyString(value: unknown): string | undefined {
 
 function asBoundedPositiveInteger(value: unknown, min: number, max = Number.POSITIVE_INFINITY): number | undefined {
   return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max ? value : undefined
+}
+
+function asBoundedInteger(value: unknown, min: number, max = Number.POSITIVE_INFINITY): number | undefined {
+  return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max ? value : undefined
+}
+
+function asBoundedNumber(value: unknown, min: number, max = Number.POSITIVE_INFINITY): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value >= min && value <= max ? value : undefined
 }
 
 function isProviderSelection(value: unknown): value is BetterSearchProviderSelection {
@@ -233,6 +300,18 @@ function asExaSearchType(value: unknown): ExaSearchType | undefined {
     : undefined
 }
 
+function asExaCategory(value: unknown): ExaCategory | undefined {
+  return value === "company" ||
+    value === "people" ||
+    value === "research paper" ||
+    value === "news" ||
+    value === "tweet" ||
+    value === "personal site" ||
+    value === "financial report"
+    ? value
+    : undefined
+}
+
 function asTavilySearchDepth(value: unknown): TavilySearchDepth | undefined {
   return value === "basic" || value === "advanced" || value === "fast" || value === "ultra-fast" ? value : undefined
 }
@@ -242,7 +321,15 @@ function asTavilyAnswerMode(value: unknown): TavilyAnswerMode | undefined {
 }
 
 function asParallelSearchMode(value: unknown): ParallelSearchMode | undefined {
-  return value === "fast" || value === "standard" ? value : undefined
+  return asNonEmptyString(value)
+}
+
+function asPerplexityApiMode(value: unknown): PerplexityApiMode | undefined {
+  return value === "search" || value === "chat" ? value : undefined
+}
+
+function asBraveSafeSearch(value: unknown): BraveSafeSearch | undefined {
+  return value === "off" || value === "moderate" || value === "strict" ? value : undefined
 }
 
 function asAnthropicToolVersion(value: unknown): AnthropicToolVersion | undefined {
@@ -326,6 +413,14 @@ export const betterSearchConfigSchema = {
       additionalProperties: false,
       properties: {
         apiKey: { type: "string" },
+        enableRichResults: {
+          type: "boolean",
+          default: true,
+        },
+        safesearch: {
+          type: "string",
+          enum: ["off", "moderate", "strict"],
+        },
       },
     },
     exa: {
@@ -337,6 +432,14 @@ export const betterSearchConfigSchema = {
           type: "string",
           default: "auto",
           enum: ["neural", "fast", "auto", "deep", "deep-reasoning", "instant"],
+        },
+        category: {
+          type: "string",
+          enum: ["company", "people", "research paper", "news", "tweet", "personal site", "financial report"],
+        },
+        maxAgeHours: {
+          type: "integer",
+          minimum: -1,
         },
       },
     },
@@ -358,6 +461,18 @@ export const betterSearchConfigSchema = {
           type: "boolean",
           default: true,
         },
+        chunksPerSource: {
+          type: "integer",
+          minimum: 1,
+        },
+        includeRawContent: {
+          type: "boolean",
+          default: false,
+        },
+        exactMatch: {
+          type: "boolean",
+          default: false,
+        },
       },
     },
     perplexity: {
@@ -365,6 +480,11 @@ export const betterSearchConfigSchema = {
       additionalProperties: false,
       properties: {
         apiKey: { type: "string" },
+        apiMode: {
+          type: "string",
+          default: "search",
+          enum: ["search", "chat"],
+        },
         baseUrl: {
           type: "string",
           default: "https://api.perplexity.ai",
@@ -382,13 +502,21 @@ export const betterSearchConfigSchema = {
         apiKey: { type: "string" },
         mode: {
           type: "string",
-          default: "fast",
-          enum: ["fast", "standard"],
+          default: "one-shot",
         },
         maxCharsPerResult: {
           type: "number",
-          default: 1500,
+          default: 5000,
           minimum: 100,
+        },
+        maxCharsTotal: {
+          type: "number",
+          default: 50000,
+          minimum: 100,
+        },
+        maxAgeSeconds: {
+          type: "number",
+          minimum: 1,
         },
       },
     },
@@ -400,6 +528,11 @@ export const betterSearchConfigSchema = {
         model: {
           type: "string",
           default: "gemini-2.5-flash",
+        },
+        dynamicThreshold: {
+          type: "number",
+          minimum: 0,
+          maximum: 1,
         },
       },
     },
@@ -439,6 +572,15 @@ export const betterSearchConfigSchema = {
           type: "boolean",
           default: true,
         },
+        city: {
+          type: "string",
+        },
+        region: {
+          type: "string",
+        },
+        timezone: {
+          type: "string",
+        },
       },
     },
     anthropic: {
@@ -455,6 +597,11 @@ export const betterSearchConfigSchema = {
           default: "web_search_20260209",
           enum: ["web_search_20250305", "web_search_20260209"],
         },
+        maxTokens: {
+          type: "number",
+          default: 4096,
+          minimum: 1,
+        },
         maxUses: {
           type: "number",
           default: 5,
@@ -463,6 +610,15 @@ export const betterSearchConfigSchema = {
         directOnly: {
           type: "boolean",
           default: true,
+        },
+        city: {
+          type: "string",
+        },
+        region: {
+          type: "string",
+        },
+        timezone: {
+          type: "string",
         },
       },
     },

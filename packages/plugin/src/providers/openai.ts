@@ -139,7 +139,7 @@ export function buildOpenAIResponsesRequest(query: string, options: SearchOption
       reasoning: {
         effort: config.reasoningEffort,
       },
-      tool_choice: "auto",
+      tool_choice: { type: "web_search" },
       input: buildPromptWithGuidance(query, options, {
         country: true,
         includeDomains: true,

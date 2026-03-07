@@ -445,7 +445,7 @@ describe("provider request builders", () => {
       reasoning: {
         effort: "low",
       },
-      tool_choice: "auto",
+      tool_choice: { type: "web_search" },
       tools: [
         {
           type: "web_search",

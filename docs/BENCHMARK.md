@@ -12,10 +12,10 @@
 
 | Provider | Speed | Quality | Score | Ratio | Content | Citations |
 |---|---:|---|---:|---:|---:|---:|
-| `tavily` | 170ms | `B-` | 7.0 | 41.18 | 6,476 chars | 5 |
-| `exa` | 230ms | `B` | 8.0 | 34.78 | 19,161 chars | 5 |
 | `brave` | 389ms | `C` | 5.0 | 12.85 | 1,745 chars | 5 |
-| `perplexity` | 505ms | `A-` | 9.0 | 17.82 | 54,419 chars | 5 |
+| `perplexity` | 505ms | `A-` | 9.0 | 17.82 | 35,524 chars | 5 |
+| `exa` | 1,507ms | `B` | 8.0 | 5.31 | 19,161 chars | 5 |
+| `tavily` | ~1,800ms | `B-` | 7.0 | 3.89 | 6,476 chars | 5 |
 | `parallel` | 2,046ms | `B` | 8.0 | 3.91 | 23,133 chars | 5 |
 | `openai` | 13,139ms | `A` | 10.0 | 0.76 | 10,375 chars | 28 (+98 sources) |
 | `gemini` | 24,743ms | `B+` | 8.5 | 0.34 | 12,256 chars | 5 (redirect URLs) |
@@ -25,11 +25,11 @@
 
 ### Rankings
 
-**By speed:** `tavily` (170ms) > `exa` (230ms) > `brave` (389ms) > `perplexity` (505ms) > `parallel` (2.0s) > `openai` (13.1s) > `gemini` (24.7s) > `anthropic` (84.9s)
+**By speed:** `brave` (389ms) > `perplexity` (505ms) > `exa` (1.5s) > `tavily` (~1.8s) > `parallel` (2.0s) > `openai` (13.1s) > `gemini` (24.7s) > `anthropic` (84.9s)
 
 **By quality:** `openai` (A) > `anthropic` (A-) = `perplexity` (A-) > `gemini` (B+) > `exa` (B) = `parallel` (B) > `tavily` (B-) > `brave` (C)
 
-**By speed/quality ratio:** `tavily` (41.18) > `exa` (34.78) > `perplexity` (17.82) > `brave` (12.85) > `parallel` (3.91) > `openai` (0.76) > `gemini` (0.34) > `anthropic` (0.11)
+**By speed/quality ratio:** `perplexity` (17.82) > `brave` (12.85) > `exa` (5.31) > `parallel` (3.91) > `tavily` (3.89) > `openai` (0.76) > `gemini` (0.34) > `anthropic` (0.11)
 
 ### Quality grading criteria
 
@@ -45,13 +45,47 @@ Weights: **completeness (30%)** + **accuracy of specifics (25%)** + **citation q
 ### Quality notes
 
 - **OpenAI (A, 10.0):** 10.4K chars with `tool_choice: { type: "web_search" }` forcing search. 28 inline url_citation annotations with title, URL, and character offsets + 98 background sources via `include: ["web_search_call.action.sources"]`. Well-structured markdown with clear framework headers. Most citations of any provider when including sources. **Note:** without `tool_choice`, gpt-4o may answer complex queries from training data and skip search entirely, returning 0 citations.
-- **Perplexity (A-, 9.0):** 54.4K chars of rich snippet content from 5 results via the Search API (`/search` endpoint). Each result includes 5K-11K chars of page content. 5 citations to authoritative sources (EU Parliament, IAPP, regulatory comparison sites). Best content volume of any provider by far. The Chat Completions path (`/chat/completions`) returns a synthesized 14K-char answer with 8-10 citations but takes 28-37s instead of 505ms.
+- **Perplexity (A-, 9.0):** 35.5K chars of rich snippet content from 5 results via the Search API (`/search` endpoint) with `max_tokens: 10000` and `max_tokens_per_page: 4096`. Each result includes 1K-14K chars of page content. 5 citations to authoritative sources (EU Parliament, IAPP, regulatory comparison sites). Best content volume of any provider. Without `max_tokens`/`max_tokens_per_page`, returns 54K+ chars which may overwhelm agent context. The Chat Completions path (`/chat/completions`) returns a synthesized 14K-char answer with 8-10 citations but takes 28-37s instead of 505ms.
 - **Anthropic (A-, 9.0):** 13.5K chars of well-structured comparison with specific compliance requirements per framework (risk categories, FRIA obligations, fines up to €35M/7% turnover). 30 real, deduplicated citations from authoritative legal/regulatory sources. Comprehensive but slow (85s due to multi-turn `pause_turn` continuation). Most real citations of any LLM provider.
 - **Gemini (B+, 8.5):** 12.3K chars of thorough analysis covering all 3 frameworks in depth. But all 5 citations are `vertexaisearch.cloud.google.com` redirect URLs — these return 404 when fetched directly and only resolve in a browser with JavaScript. This is a Gemini API limitation, not a plugin bug. Content quality alone would be A-; unverifiable citations are a significant penalty.
 - **Exa (B, 8.0):** No synthesized answer (traditional search). 19.2K chars of highlighted excerpts from 5 highly relevant sources — regulatory comparison sites, academic papers, legal analysis. Excellent source selection (regulations.ai, IAPP, programming-helper.com). Richest highlighted content among traditional search providers.
 - **Parallel (B, 8.0):** No synthesized answer (traditional search). 23.1K chars of excerpts from 5 results. Good source diversity — EU Parliament, White House, think tanks, Plurus Strategies. Excerpts are extensive and well-extracted when using `excerpts.max_chars_per_result: 5000`. **Note:** the response uses `excerpts[]` (array), not `excerpt` (string) — callers must join the array.
-- **Tavily (B-, 7.0):** 249 chars of generated answer + 6.2K chars of result content from 5 sources including IAPP and UChicago Business Law Review. The synthesized answer is thin, but `search_depth: "advanced"` with `chunks_per_source: 3` returns solid source content. Fastest provider at 170ms.
+- **Tavily (B-, 7.0):** 249 chars of generated answer + 6.2K chars of result content from 5 sources including IAPP and UChicago Business Law Review. The synthesized answer is thin, but `search_depth: "advanced"` with `chunks_per_source: 3` returns solid source content. Speed is ~1.5-2.5s with `auto_parameters: true` (see depth analysis below).
 - **Brave (C, 5.0):** No synthesized answer (traditional search). 1.7K chars of descriptions from 5 relevant results. On free tier: `extra_snippets` returns empty, no rich data. Decent source relevance for pure keyword search. **Paid plan** would unlock up to 5 additional excerpt snippets per result and structured rich data (stocks, weather, sports).
+
+---
+
+## Tavily depth analysis
+
+Tavily's `search_depth` and `auto_parameters` significantly affect speed and content shape. Tested on a similar query:
+
+### With `auto_parameters: true` (default)
+
+| Depth | Speed | Answer | Content | Notes |
+|---|---:|---:|---:|---|
+| `ultra-fast` | 1,550ms | 569 chars | 4,625 chars | Auto overrides depth; similar latency to all modes |
+| `fast` | 2,330ms | 618 chars | 4,625 chars | Same content as ultra-fast |
+| `basic` | 1,408ms | 721 chars | 4,917 chars | Slightly more content |
+| `advanced` | 2,250ms | 864 chars | 6,986 chars | Best answer + content |
+
+### With `auto_parameters: false`
+
+| Depth | Speed | Answer | Content | Notes |
+|---|---:|---:|---:|---|
+| `ultra-fast` | 921ms | 283 chars | 12,245 chars | Fastest; NLP page summaries (most raw content) |
+| `fast` | 1,126ms | 309 chars | 6,522 chars | Reranked chunks |
+| `basic` | 1,558ms | 269 chars | 3,635 chars | NLP page summaries (less content than ultra-fast) |
+| `advanced` | 3,973ms | 424 chars | 10,086 chars | Reranked chunks; slowest but thorough |
+
+### Key findings
+
+- **`auto_parameters: true` homogenizes latency** — all depths cluster at 1.4-2.3s regardless of requested depth. The auto analyzer adds overhead but produces better answers (569-864 chars vs 269-424 chars).
+- **`auto_parameters` may auto-upgrade to `advanced`** (2 credits per query instead of 1). The docs warn about this cost implication.
+- **`ultra-fast` with `auto_parameters: false`** is the fastest real mode (921ms) and paradoxically returns the most raw content (12.2K chars as NLP page summaries).
+- **Content types differ by depth:** `basic`/`ultra-fast` return NLP page summaries; `fast`/`advanced` return reranked chunks. Chunks are more targeted but summaries may contain more total text.
+- **The 170ms result in earlier benchmarks was a cache hit** — Tavily caches responses for identical queries. Real speed is 900ms-4s depending on depth and auto_parameters.
+
+**Recommendation:** Keep `auto_parameters: true` as default (smarter query analysis, better answer quality). Set `auto_parameters: false` with `search_depth: "ultra-fast"` for lowest latency at the cost of answer quality.
 
 ---
 
@@ -80,10 +114,10 @@ Weights: **completeness (30%)** + **accuracy of specifics (25%)** + **citation q
 
 | Provider | Before | After | Speed Δ | Quality Δ | Ratio Δ | Key change |
 |---|---:|---:|---|---|---|---|
-| **Tavily** | 2,616ms | **170ms** | **15x faster** | D+ → **B-** | 1.34 → **41.18** | `chunksPerSource: 3`, include result content |
-| **Exa** | 1,405ms | **230ms** | **6x faster** | B- → **B** | 4.98 → **34.78** | `maxCharacters: 4000` highlights |
 | **Brave** | ERR* | 389ms | N/A | N/A → **C** | — → **12.85** | Fixed benchmark URL (plugin was always correct) |
-| **Perplexity** | 36,615ms | **505ms** | **72x faster** | Same (A-) | 0.25 → **17.82** | Search API (`apiMode: "search"`) |
+| **Perplexity** | 36,615ms | **505ms** | **72x faster** | Same (A-) | 0.25 → **17.82** | Search API (`apiMode: "search"`) + `max_tokens` control |
+| **Exa** | 1,405ms | 1,507ms | Same | B- → **B** | 4.98 → **5.31** | `maxCharacters: 4000` highlights (19K vs 8K content) |
+| **Tavily** | 2,616ms | **~1,800ms** | Slight | D+ → **B-** | 1.34 → **3.89** | `chunksPerSource: 3`, include result content |
 | **Parallel** | 3,026ms | 2,046ms | 1.5x faster | C- → **B** | 1.49 → **3.91** | `mode: "one-shot"`, `excerpts[]` array, 5K chars/result |
 | **OpenAI** | 15,113ms | 13,139ms | Slight | B → **A** | 0.53 → **0.76** | `tool_choice`, `include: sources`, typed annotations |
 | **Gemini** | 25,881ms | 24,743ms | Same | B → **B+** | 0.31 → 0.34 | `groundingSupports` extraction (citations still redirect) |
@@ -91,31 +125,33 @@ Weights: **completeness (30%)** + **accuracy of specifics (25%)** + **citation q
 
 ### Upgrade impact summary
 
-- **Perplexity** had the largest speed improvement: 36.6s → 505ms (**72x faster**) by switching to the Search API. Also the richest content at 54K chars.
-- **Tavily** went from 2.6s to 170ms (**15x faster**) and jumped from D+ to B- by including result content alongside the answer.
+- **Perplexity** had the largest speed improvement: 36.6s → 505ms (**72x faster**) by switching to the Search API. Content controlled via `max_tokens: 10000` (was unbounded at 54K+).
 - **OpenAI** jumped from B to A by using `tool_choice: { type: "web_search" }` to ensure search triggers, plus `include: ["web_search_call.action.sources"]` for 98 background sources.
+- **Tavily** jumped from D+ to B- by including result content alongside the thin answer. Speed is ~1.8s (the 170ms in earlier benchmarks was a Tavily response cache hit).
 - **Parallel** went from C- to B — 23K chars of excerpts when reading the `excerpts[]` array correctly.
-- **Exa** went from 1.4s to 230ms and content grew from 8K to 19K chars.
+- **Exa** content grew from 8K to 19K chars with `maxCharacters: 4000` highlights.
 
-### Benchmark bug fixes
+### Benchmark corrections
 - **Brave:** v1 benchmark used `api.brave.com` instead of `api.search.brave.com`. Plugin source was always correct.
 - **OpenAI:** v1 benchmark didn't use `tool_choice` or `include: sources`. Without `tool_choice`, gpt-4o skips search for complex queries it can answer from training data.
 - **Parallel:** v1 benchmark read `excerpt` (string) instead of `excerpts` (array), getting 0 chars.
 - **Perplexity:** v1 benchmark used chat completions path. Plugin defaults to Search API.
+- **Tavily:** 170ms result was a Tavily response cache hit from repeated identical queries. Real speed is ~1.5-2.5s with `auto_parameters: true`.
+- **Exa:** 230ms result was likely edge cache. Typical speed is ~1.5s.
 
 ---
 
 ## Provider tiers (post-upgrade)
 
 ### Fast search (< 3s)
-**Tavily, Exa, Brave, Perplexity, Parallel**
+**Brave, Perplexity, Exa, Tavily, Parallel**
 
 Best for: quick lookups, structured results, agent workflows where latency matters.
-- **Perplexity** (505ms) has the richest content (54K chars) and best overall value.
-- **Exa** (230ms) has excellent source selection and 19K chars of highlights.
-- **Tavily** (170ms) is the fastest with decent answer + result content.
+- **Perplexity** (505ms) has the richest content (35K chars) and best speed/quality ratio overall.
+- **Brave** (389ms) is the fastest and cheapest (free tier works) but shallowest content.
+- **Exa** (~1.5s) has excellent source selection and 19K chars of highlights.
+- **Tavily** (~1.8s) provides answer + result content; good for hybrid use cases.
 - **Parallel** (2.0s) provides 23K chars of well-extracted excerpts.
-- **Brave** (389ms) is reliable and cheapest (free tier works).
 
 ### LLM search (10-85s)
 **OpenAI, Gemini, Anthropic**
@@ -126,8 +162,8 @@ Best for: synthesized answers, complex multi-source questions, research.
 - **Anthropic** (85s) provides exhaustive research with 30 real citations via multi-turn search. Slowest but most thorough.
 
 ### Recommended defaults by use case
-- **Best overall:** `perplexity` — A- quality at 505ms with 54K chars of content
-- **Fastest:** `tavily` (170ms) or `exa` (230ms)
+- **Best overall:** `perplexity` — A- quality at 505ms with 35K chars of content
+- **Fastest:** `brave` (389ms) for basic results, `perplexity` (505ms) for rich content
 - **Best synthesized answer:** `openai` with `tool_choice` — A quality, 28 citations
 - **Best for research:** `anthropic` — most real citations, deepest analysis
 - **Budget:** `brave` free tier (2K queries/month, no API cost)
@@ -139,9 +175,12 @@ Best for: synthesized answers, complex multi-source questions, research.
 | Provider | Limitation | Impact | Workaround |
 |---|---|---|---|
 | **Gemini** | All citations are `vertexaisearch.cloud.google.com` redirect URLs | URLs return 404 when fetched; only resolve in browser JS | None — Gemini API limitation. Real URLs not available via REST API. |
-| **OpenAI** | gpt-4o may skip search for complex queries answerable from training data | Returns 0 citations when search doesn't trigger | Use `tool_choice: { type: "web_search" }` to force search. Plugin should set this. |
+| **OpenAI** | gpt-4o may skip search for complex queries answerable from training data | Returns 0 citations when search doesn't trigger | Use `tool_choice: { type: "web_search" }` to force search (plugin default). |
 | **Brave** | `extra_snippets` and rich data require paid Search plan | Free tier returns descriptions only (no extra excerpts) | Upgrade to paid plan ($5/month) for richer results |
 | **Anthropic** | Multi-turn `pause_turn` adds 40-80s per query | Slowest provider by far | Reduce `maxUses` to limit search iterations |
+| **Tavily** | `auto_parameters: true` may auto-upgrade to `advanced` depth | 2 credits per query instead of 1 | Set `auto_parameters: false` + explicit `search_depth` to control cost |
+| **Tavily** | Response caching on identical queries | Benchmark speeds may appear faster than real-world | Use unique queries for benchmarking; expect ~1.5-2.5s typical |
+| **Perplexity** | Search API date filters require MM/DD/YYYY format | YYYY-MM-DD format silently fails or is ignored | Fixed in plugin v2: uses `toUsDate()` for correct format |
 
 ---
 
@@ -154,5 +193,7 @@ Best for: synthesized answers, complex multi-source questions, research.
 - Quality graded on: completeness (30%), accuracy of specifics (25%), citation quality (25%), structure/usability (20%).
 - **Ratio** = Quality Score / Elapsed seconds. Measures quality per unit of wait time.
 - OpenAI uses `tool_choice: { type: "web_search" }` to force search and `include: ["web_search_call.action.sources"]`.
-- Perplexity uses the Search API (`/search`) not Chat Completions (`/chat/completions`).
+- Perplexity uses the Search API (`/search`) with `max_tokens: 10000` and `max_tokens_per_page: 4096`.
+- Tavily speed corrected from cache-hit anomaly; representative speed is ~1.8s with `auto_parameters: true`.
+- Exa speed corrected from edge-cache anomaly; typical speed is ~1.5s.
 - Single query benchmark — results will vary across query types. A multi-query suite is planned.

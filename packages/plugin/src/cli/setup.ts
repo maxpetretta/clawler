@@ -22,6 +22,19 @@ type SetupWizardDeps = {
   defaultPluginPath: typeof defaultPluginPath
 }
 
+const SETUP_CANCELLED_MESSAGE = "Setup cancelled."
+const PROVIDER_OPTIONS = [
+  { value: "auto", label: "Auto detect", hint: "Use the first available provider key" },
+  { value: "exa", label: "Exa", hint: "Neural search API" },
+  { value: "tavily", label: "Tavily", hint: "Agent search API" },
+  { value: "brave", label: "Brave", hint: "Traditional search index" },
+  { value: "parallel", label: "Parallel", hint: "Search and extraction API" },
+  { value: "perplexity", label: "Perplexity", hint: "LLM-native search" },
+  { value: "openai", label: "OpenAI", hint: "Responses API web search" },
+  { value: "anthropic", label: "Anthropic", hint: "Messages API web search" },
+  { value: "gemini", label: "Gemini", hint: "Google grounding" },
+] as const
+
 const defaultSetupWizardDeps: SetupWizardDeps = {
   prompts: {
     cancel,
@@ -45,60 +58,49 @@ export async function runSetupWizard(
 ): Promise<void> {
   deps.prompts.intro("Clawler setup")
 
-  const selectedProvider = await deps.prompts.select({
-    message: "Choose a default provider",
-    initialValue: config.provider,
-    options: [
-      { value: "auto", label: "Auto detect", hint: "Use the first available provider key" },
-      { value: "exa", label: "Exa", hint: "Neural search API" },
-      { value: "tavily", label: "Tavily", hint: "Agent search API" },
-      { value: "brave", label: "Brave", hint: "Traditional search index" },
-      { value: "parallel", label: "Parallel", hint: "Search and extraction API" },
-      { value: "perplexity", label: "Perplexity", hint: "LLM-native search" },
-      { value: "openai", label: "OpenAI", hint: "Responses API web search" },
-      { value: "anthropic", label: "Anthropic", hint: "Messages API web search" },
-      { value: "gemini", label: "Gemini", hint: "Google grounding" },
-    ],
-  })
-
-  if (deps.prompts.isCancel(selectedProvider)) {
-    deps.prompts.cancel("Setup cancelled.")
+  const selectedProvider = await promptOrCancel<ClawlerProviderSelection>(
+    deps.prompts,
+    deps.prompts.select({
+      message: "Choose a default provider",
+      initialValue: config.provider,
+      options: PROVIDER_OPTIONS,
+    }),
+  )
+  if (selectedProvider === undefined) {
     return
   }
 
-  const shouldDenyBuiltin = await deps.prompts.confirm({
-    message: 'Write `tools.deny += ["web_search"]` to OpenClaw config?',
-    initialValue: true,
-  })
-
-  if (deps.prompts.isCancel(shouldDenyBuiltin)) {
-    deps.prompts.cancel("Setup cancelled.")
+  const shouldDenyBuiltin = await promptOrCancel<boolean>(
+    deps.prompts,
+    deps.prompts.confirm({
+      message: 'Write `tools.deny += ["web_search"]` to OpenClaw config?',
+      initialValue: true,
+    }),
+  )
+  if (shouldDenyBuiltin === undefined) {
     return
   }
 
-  const statuses = deps
-    .listProviderStatuses(config)
-    .map(
-      (status) =>
-        `${status.available ? "available" : "missing"}  ${status.id}  ${status.source}  ${status.envVars.join(" | ")}`,
-    )
-    .join("\n")
-
-  deps.prompts.note(statuses, "Detected providers")
+  deps.prompts.note(formatProviderStatuses(deps.listProviderStatuses(config)), "Detected providers")
 
   const providerApiKey = await promptForApiKey(selectedProvider, deps.prompts)
   if (providerApiKey === undefined) {
-    deps.prompts.cancel("Setup cancelled.")
     return
   }
 
-  const shouldPersist = await deps.prompts.confirm({
-    message: "Persist these changes to ~/.openclaw/openclaw.json?",
-    initialValue: true,
-  })
+  const shouldPersist = await promptOrCancel<boolean>(
+    deps.prompts,
+    deps.prompts.confirm({
+      message: "Persist these changes to ~/.openclaw/openclaw.json?",
+      initialValue: true,
+    }),
+  )
+  if (shouldPersist === undefined) {
+    return
+  }
 
-  if (deps.prompts.isCancel(shouldPersist) || !shouldPersist) {
-    deps.prompts.cancel("Setup cancelled.")
+  if (!shouldPersist) {
+    deps.prompts.cancel(SETUP_CANCELLED_MESSAGE)
     return
   }
 
@@ -143,12 +145,14 @@ async function promptForApiKey(
     return ""
   }
 
-  const shouldSaveKey = await prompts.confirm({
-    message: `Save ${provider} API key into OpenClaw config?`,
-    initialValue: false,
-  })
-
-  if (prompts.isCancel(shouldSaveKey)) {
+  const shouldSaveKey = await promptOrCancel<boolean>(
+    prompts,
+    prompts.confirm({
+      message: `Save ${provider} API key into OpenClaw config?`,
+      initialValue: false,
+    }),
+  )
+  if (shouldSaveKey === undefined) {
     return undefined
   }
 
@@ -156,16 +160,35 @@ async function promptForApiKey(
     return ""
   }
 
-  const apiKey = await prompts.password({
-    message: `Enter ${provider} API key`,
-    validate(value) {
-      return value && value.trim().length > 0 ? undefined : "API key must not be empty."
-    },
-  })
+  const apiKey = await promptOrCancel<string>(
+    prompts,
+    prompts.password({
+      message: `Enter ${provider} API key`,
+      validate(value) {
+        return value && value.trim().length > 0 ? undefined : "API key must not be empty."
+      },
+    }),
+  )
 
-  if (prompts.isCancel(apiKey)) {
+  return apiKey?.trim()
+}
+
+function formatProviderStatuses(statuses: ReturnType<typeof listProviderStatuses>): string {
+  return statuses
+    .map(
+      (status) =>
+        `${status.available ? "available" : "missing"}  ${status.id}  ${status.source}  ${status.envVars.join(" | ")}`,
+    )
+    .join("\n")
+}
+
+async function promptOrCancel<T>(prompts: SetupWizardPromptApi, prompt: Promise<T | symbol>): Promise<T | undefined> {
+  const value = await prompt
+
+  if (prompts.isCancel(value)) {
+    prompts.cancel(SETUP_CANCELLED_MESSAGE)
     return undefined
   }
 
-  return apiKey.trim()
+  return value
 }

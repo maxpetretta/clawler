@@ -1,4 +1,4 @@
-import type { ProviderId } from "./providers/types"
+import { isProviderId, providerIds, type ProviderId } from "./providers/types"
 
 export type ClawlerProviderSelection = ProviderId | "auto"
 export type ExaSearchType = "neural" | "fast" | "auto" | "deep" | "deep-reasoning" | "instant"
@@ -99,6 +99,47 @@ export type ClawlerConfig = {
   }
 }
 
+const PROVIDER_SELECTIONS = ["auto", ...providerIds] as const
+const EXA_SEARCH_TYPES = ["neural", "fast", "auto", "deep", "deep-reasoning", "instant"] as const
+const EXA_CATEGORIES = [
+  "company",
+  "people",
+  "research paper",
+  "news",
+  "tweet",
+  "personal site",
+  "financial report",
+] as const
+const TAVILY_SEARCH_DEPTHS = ["basic", "advanced", "fast", "ultra-fast"] as const
+const TAVILY_ANSWER_MODES = ["basic", "advanced"] as const
+const PERPLEXITY_API_MODES = ["search", "chat"] as const
+const BRAVE_SAFE_SEARCH_VALUES = ["off", "moderate", "strict"] as const
+const ANTHROPIC_TOOL_VERSIONS = ["web_search_20250305", "web_search_20260209"] as const
+const OPENAI_REASONING_EFFORTS = ["low", "medium", "high"] as const
+const OPENAI_SEARCH_CONTEXT_SIZES = ["low", "medium", "high"] as const
+const OPENAI_API_MODES = ["auto", "responses", "chat_completions_search"] as const
+
+const STRING_PROPERTY = { type: "string" } as const
+const LOCATION_SCHEMA_PROPERTIES = {
+  city: STRING_PROPERTY,
+  region: STRING_PROPERTY,
+  timezone: STRING_PROPERTY,
+} as const
+const SHARED_SEARCH_SCHEMA_PROPERTIES = {
+  freshness: STRING_PROPERTY,
+  country: STRING_PROPERTY,
+  searchLang: STRING_PROPERTY,
+  topic: STRING_PROPERTY,
+  includeDomains: {
+    type: "array",
+    items: STRING_PROPERTY,
+  },
+  excludeDomains: {
+    type: "array",
+    items: STRING_PROPERTY,
+  },
+} as const
+
 const DEFAULT_CONFIG: ClawlerConfig = {
   provider: "auto",
   fallback: [],
@@ -154,109 +195,148 @@ const DEFAULT_CONFIG: ClawlerConfig = {
 }
 
 export function resolveConfig(pluginConfig: unknown): ClawlerConfig {
-  if (!pluginConfig || typeof pluginConfig !== "object") {
+  const record = readObject(pluginConfig)
+
+  if (!record) {
     return DEFAULT_CONFIG
   }
 
-  const record = pluginConfig as Record<string, unknown>
-
   return {
-    provider: isProviderSelection(record.provider) ? record.provider : DEFAULT_CONFIG.provider,
+    provider: asProviderSelection(record.provider) ?? DEFAULT_CONFIG.provider,
     fallback: asProviderIdArray(record.fallback) ?? DEFAULT_CONFIG.fallback,
     toolName: asNonEmptyString(record.toolName) ?? DEFAULT_CONFIG.toolName,
     maxResults: asBoundedPositiveInteger(record.maxResults, 1, 20) ?? DEFAULT_CONFIG.maxResults,
     cacheTtlMinutes: asBoundedPositiveInteger(record.cacheTtlMinutes, 0) ?? DEFAULT_CONFIG.cacheTtlMinutes,
     timeoutSeconds: asBoundedPositiveInteger(record.timeoutSeconds, 1) ?? DEFAULT_CONFIG.timeoutSeconds,
-    searchDefaults: {
-      freshness: asNonEmptyString(readObject(record.searchDefaults)?.freshness),
-      country: asNonEmptyString(readObject(record.searchDefaults)?.country),
-      searchLang: asNonEmptyString(readObject(record.searchDefaults)?.searchLang),
-      topic: asNonEmptyString(readObject(record.searchDefaults)?.topic),
-      includeDomains: asStringArray(readObject(record.searchDefaults)?.includeDomains),
-      excludeDomains: asStringArray(readObject(record.searchDefaults)?.excludeDomains),
-    },
-    brave: {
-      apiKey: readApiKey(record.brave),
-      enableRichResults:
-        asBoolean(readObject(record.brave)?.enableRichResults) ?? DEFAULT_CONFIG.brave.enableRichResults,
-      safesearch: asBraveSafeSearch(readObject(record.brave)?.safesearch),
-    },
-    exa: {
-      apiKey: readApiKey(record.exa),
-      type: asExaSearchType(readObject(record.exa)?.type) ?? DEFAULT_CONFIG.exa.type,
-      category: asExaCategory(readObject(record.exa)?.category),
-      maxAgeHours: asBoundedInteger(readObject(record.exa)?.maxAgeHours, -1),
-    },
-    tavily: {
-      apiKey: readApiKey(record.tavily),
-      searchDepth: asTavilySearchDepth(readObject(record.tavily)?.searchDepth) ?? DEFAULT_CONFIG.tavily.searchDepth,
-      includeAnswer:
-        asTavilyAnswerMode(readObject(record.tavily)?.includeAnswer) ?? DEFAULT_CONFIG.tavily.includeAnswer,
-      autoParameters: asBoolean(readObject(record.tavily)?.autoParameters) ?? DEFAULT_CONFIG.tavily.autoParameters,
-      chunksPerSource: asBoundedPositiveInteger(readObject(record.tavily)?.chunksPerSource, 1),
-      includeRawContent:
-        asBoolean(readObject(record.tavily)?.includeRawContent) ?? DEFAULT_CONFIG.tavily.includeRawContent,
-      exactMatch: asBoolean(readObject(record.tavily)?.exactMatch) ?? DEFAULT_CONFIG.tavily.exactMatch,
-    },
-    perplexity: {
-      apiKey: readApiKey(record.perplexity),
-      apiMode: asPerplexityApiMode(readObject(record.perplexity)?.apiMode) ?? DEFAULT_CONFIG.perplexity.apiMode,
-      baseUrl: asNonEmptyString(readObject(record.perplexity)?.baseUrl) ?? DEFAULT_CONFIG.perplexity.baseUrl,
-      model: asNonEmptyString(readObject(record.perplexity)?.model) ?? DEFAULT_CONFIG.perplexity.model,
-      maxTokens:
-        asBoundedPositiveInteger(readObject(record.perplexity)?.maxTokens, 1, 1000000) ??
-        DEFAULT_CONFIG.perplexity.maxTokens,
-      maxTokensPerPage:
-        asBoundedPositiveInteger(readObject(record.perplexity)?.maxTokensPerPage, 1, 1000000) ??
-        DEFAULT_CONFIG.perplexity.maxTokensPerPage,
-    },
-    parallel: {
-      apiKey: readApiKey(record.parallel),
-      mode: asParallelSearchMode(readObject(record.parallel)?.mode) ?? DEFAULT_CONFIG.parallel.mode,
-      maxCharsPerResult:
-        asBoundedPositiveInteger(readObject(record.parallel)?.maxCharsPerResult, 100) ??
-        DEFAULT_CONFIG.parallel.maxCharsPerResult,
-      maxCharsTotal:
-        asBoundedPositiveInteger(readObject(record.parallel)?.maxCharsTotal, 100) ??
-        DEFAULT_CONFIG.parallel.maxCharsTotal,
-      maxAgeSeconds: asBoundedPositiveInteger(readObject(record.parallel)?.maxAgeSeconds, 1),
-    },
-    gemini: {
-      apiKey: readApiKey(record.gemini),
-      model: asNonEmptyString(readObject(record.gemini)?.model) ?? DEFAULT_CONFIG.gemini.model,
-      dynamicThreshold: asBoundedNumber(readObject(record.gemini)?.dynamicThreshold, 0, 1),
-    },
-    openai: {
-      apiKey: readApiKey(record.openai),
-      apiMode: asOpenAIApiMode(readObject(record.openai)?.apiMode) ?? DEFAULT_CONFIG.openai.apiMode,
-      model: asNonEmptyString(readObject(record.openai)?.model) ?? DEFAULT_CONFIG.openai.model,
-      chatCompletionsModel:
-        asNonEmptyString(readObject(record.openai)?.chatCompletionsModel) ?? DEFAULT_CONFIG.openai.chatCompletionsModel,
-      reasoningEffort:
-        asOpenAIReasoningEffort(readObject(record.openai)?.reasoningEffort) ?? DEFAULT_CONFIG.openai.reasoningEffort,
-      searchContextSize:
-        asOpenAISearchContextSize(readObject(record.openai)?.searchContextSize) ??
-        DEFAULT_CONFIG.openai.searchContextSize,
-      includeSources: asBoolean(readObject(record.openai)?.includeSources) ?? DEFAULT_CONFIG.openai.includeSources,
-      externalWebAccess:
-        asBoolean(readObject(record.openai)?.externalWebAccess) ?? DEFAULT_CONFIG.openai.externalWebAccess,
-      city: asNonEmptyString(readObject(record.openai)?.city),
-      region: asNonEmptyString(readObject(record.openai)?.region),
-      timezone: asNonEmptyString(readObject(record.openai)?.timezone),
-    },
-    anthropic: {
-      apiKey: readApiKey(record.anthropic),
-      model: asNonEmptyString(readObject(record.anthropic)?.model) ?? DEFAULT_CONFIG.anthropic.model,
-      toolVersion:
-        asAnthropicToolVersion(readObject(record.anthropic)?.toolVersion) ?? DEFAULT_CONFIG.anthropic.toolVersion,
-      maxTokens:
-        asBoundedPositiveInteger(readObject(record.anthropic)?.maxTokens, 1) ?? DEFAULT_CONFIG.anthropic.maxTokens,
-      maxUses: asBoundedPositiveInteger(readObject(record.anthropic)?.maxUses, 1) ?? DEFAULT_CONFIG.anthropic.maxUses,
-      directOnly: asBoolean(readObject(record.anthropic)?.directOnly) ?? DEFAULT_CONFIG.anthropic.directOnly,
-      city: asNonEmptyString(readObject(record.anthropic)?.city),
-      region: asNonEmptyString(readObject(record.anthropic)?.region),
-      timezone: asNonEmptyString(readObject(record.anthropic)?.timezone),
-    },
+    searchDefaults: resolveSharedOptions(record.searchDefaults),
+    brave: resolveBraveConfig(record.brave),
+    exa: resolveExaConfig(record.exa),
+    tavily: resolveTavilyConfig(record.tavily),
+    perplexity: resolvePerplexityConfig(record.perplexity),
+    parallel: resolveParallelConfig(record.parallel),
+    gemini: resolveGeminiConfig(record.gemini),
+    openai: resolveOpenAIConfig(record.openai),
+    anthropic: resolveAnthropicConfig(record.anthropic),
+  }
+}
+
+function resolveSharedOptions(value: unknown): ClawlerSharedOptions {
+  const record = readObject(value)
+
+  return {
+    freshness: asNonEmptyString(record?.freshness),
+    country: asNonEmptyString(record?.country),
+    searchLang: asNonEmptyString(record?.searchLang),
+    topic: asNonEmptyString(record?.topic),
+    includeDomains: asStringArray(record?.includeDomains),
+    excludeDomains: asStringArray(record?.excludeDomains),
+  }
+}
+
+function resolveBraveConfig(value: unknown): ClawlerConfig["brave"] {
+  const record = readObject(value)
+
+  return {
+    apiKey: readApiKey(value),
+    enableRichResults: asBoolean(record?.enableRichResults) ?? DEFAULT_CONFIG.brave.enableRichResults,
+    safesearch: asEnum(record?.safesearch, BRAVE_SAFE_SEARCH_VALUES),
+  }
+}
+
+function resolveExaConfig(value: unknown): ClawlerConfig["exa"] {
+  const record = readObject(value)
+
+  return {
+    apiKey: readApiKey(value),
+    type: asEnum(record?.type, EXA_SEARCH_TYPES) ?? DEFAULT_CONFIG.exa.type,
+    category: asEnum(record?.category, EXA_CATEGORIES),
+    maxAgeHours: asBoundedInteger(record?.maxAgeHours, -1),
+  }
+}
+
+function resolveTavilyConfig(value: unknown): ClawlerConfig["tavily"] {
+  const record = readObject(value)
+
+  return {
+    apiKey: readApiKey(value),
+    searchDepth: asEnum(record?.searchDepth, TAVILY_SEARCH_DEPTHS) ?? DEFAULT_CONFIG.tavily.searchDepth,
+    includeAnswer: asTavilyAnswerMode(record?.includeAnswer) ?? DEFAULT_CONFIG.tavily.includeAnswer,
+    autoParameters: asBoolean(record?.autoParameters) ?? DEFAULT_CONFIG.tavily.autoParameters,
+    chunksPerSource: asBoundedPositiveInteger(record?.chunksPerSource, 1),
+    includeRawContent: asBoolean(record?.includeRawContent) ?? DEFAULT_CONFIG.tavily.includeRawContent,
+    exactMatch: asBoolean(record?.exactMatch) ?? DEFAULT_CONFIG.tavily.exactMatch,
+  }
+}
+
+function resolvePerplexityConfig(value: unknown): ClawlerConfig["perplexity"] {
+  const record = readObject(value)
+
+  return {
+    apiKey: readApiKey(value),
+    apiMode: asEnum(record?.apiMode, PERPLEXITY_API_MODES) ?? DEFAULT_CONFIG.perplexity.apiMode,
+    baseUrl: asNonEmptyString(record?.baseUrl) ?? DEFAULT_CONFIG.perplexity.baseUrl,
+    model: asNonEmptyString(record?.model) ?? DEFAULT_CONFIG.perplexity.model,
+    maxTokens: asBoundedPositiveInteger(record?.maxTokens, 1, 1000000) ?? DEFAULT_CONFIG.perplexity.maxTokens,
+    maxTokensPerPage:
+      asBoundedPositiveInteger(record?.maxTokensPerPage, 1, 1000000) ?? DEFAULT_CONFIG.perplexity.maxTokensPerPage,
+  }
+}
+
+function resolveParallelConfig(value: unknown): ClawlerConfig["parallel"] {
+  const record = readObject(value)
+
+  return {
+    apiKey: readApiKey(value),
+    mode: asNonEmptyString(record?.mode) ?? DEFAULT_CONFIG.parallel.mode,
+    maxCharsPerResult:
+      asBoundedPositiveInteger(record?.maxCharsPerResult, 100) ?? DEFAULT_CONFIG.parallel.maxCharsPerResult,
+    maxCharsTotal: asBoundedPositiveInteger(record?.maxCharsTotal, 100) ?? DEFAULT_CONFIG.parallel.maxCharsTotal,
+    maxAgeSeconds: asBoundedPositiveInteger(record?.maxAgeSeconds, 1),
+  }
+}
+
+function resolveGeminiConfig(value: unknown): ClawlerConfig["gemini"] {
+  const record = readObject(value)
+
+  return {
+    apiKey: readApiKey(value),
+    model: asNonEmptyString(record?.model) ?? DEFAULT_CONFIG.gemini.model,
+    dynamicThreshold: asBoundedNumber(record?.dynamicThreshold, 0, 1),
+  }
+}
+
+function resolveOpenAIConfig(value: unknown): ClawlerConfig["openai"] {
+  const record = readObject(value)
+
+  return {
+    apiKey: readApiKey(value),
+    apiMode: asEnum(record?.apiMode, OPENAI_API_MODES) ?? DEFAULT_CONFIG.openai.apiMode,
+    model: asNonEmptyString(record?.model) ?? DEFAULT_CONFIG.openai.model,
+    chatCompletionsModel: asNonEmptyString(record?.chatCompletionsModel) ?? DEFAULT_CONFIG.openai.chatCompletionsModel,
+    reasoningEffort: asEnum(record?.reasoningEffort, OPENAI_REASONING_EFFORTS) ?? DEFAULT_CONFIG.openai.reasoningEffort,
+    searchContextSize:
+      asEnum(record?.searchContextSize, OPENAI_SEARCH_CONTEXT_SIZES) ?? DEFAULT_CONFIG.openai.searchContextSize,
+    includeSources: asBoolean(record?.includeSources) ?? DEFAULT_CONFIG.openai.includeSources,
+    externalWebAccess: asBoolean(record?.externalWebAccess) ?? DEFAULT_CONFIG.openai.externalWebAccess,
+    city: asNonEmptyString(record?.city),
+    region: asNonEmptyString(record?.region),
+    timezone: asNonEmptyString(record?.timezone),
+  }
+}
+
+function resolveAnthropicConfig(value: unknown): ClawlerConfig["anthropic"] {
+  const record = readObject(value)
+
+  return {
+    apiKey: readApiKey(value),
+    model: asNonEmptyString(record?.model) ?? DEFAULT_CONFIG.anthropic.model,
+    toolVersion: asEnum(record?.toolVersion, ANTHROPIC_TOOL_VERSIONS) ?? DEFAULT_CONFIG.anthropic.toolVersion,
+    maxTokens: asBoundedPositiveInteger(record?.maxTokens, 1) ?? DEFAULT_CONFIG.anthropic.maxTokens,
+    maxUses: asBoundedPositiveInteger(record?.maxUses, 1) ?? DEFAULT_CONFIG.anthropic.maxUses,
+    directOnly: asBoolean(record?.directOnly) ?? DEFAULT_CONFIG.anthropic.directOnly,
+    city: asNonEmptyString(record?.city),
+    region: asNonEmptyString(record?.region),
+    timezone: asNonEmptyString(record?.timezone),
   }
 }
 
@@ -265,7 +345,7 @@ function readApiKey(value: unknown): string | undefined {
 }
 
 function readObject(value: unknown): Record<string, unknown> | undefined {
-  if (!value || typeof value !== "object") {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
     return undefined
   }
 
@@ -274,6 +354,10 @@ function readObject(value: unknown): Record<string, unknown> | undefined {
 
 function asNonEmptyString(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined
+}
+
+function asEnum<T extends string>(value: unknown, allowed: readonly T[]): T | undefined {
+  return typeof value === "string" && allowed.includes(value as T) ? (value as T) : undefined
 }
 
 function asBoundedPositiveInteger(value: unknown, min: number, max = Number.POSITIVE_INFINITY): number | undefined {
@@ -288,75 +372,25 @@ function asBoundedNumber(value: unknown, min: number, max = Number.POSITIVE_INFI
   return typeof value === "number" && Number.isFinite(value) && value >= min && value <= max ? value : undefined
 }
 
-function isProviderSelection(value: unknown): value is ClawlerProviderSelection {
-  return (
-    value === "auto" ||
-    value === "brave" ||
-    value === "exa" ||
-    value === "tavily" ||
-    value === "perplexity" ||
-    value === "parallel" ||
-    value === "gemini" ||
-    value === "openai" ||
-    value === "anthropic"
-  )
+function asProviderSelection(value: unknown): ClawlerProviderSelection | undefined {
+  return value === "auto" ? value : asProviderId(value)
 }
 
-function isProviderId(value: unknown): value is ProviderId {
-  return isProviderSelection(value) && value !== "auto"
+function asProviderId(value: unknown): ProviderId | undefined {
+  return isProviderId(value) ? value : undefined
 }
 
 function asProviderIdArray(value: unknown): ProviderId[] | undefined {
-  if (!Array.isArray(value)) return undefined
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
   const ids = value.filter(isProviderId)
   return ids.length > 0 ? ids : undefined
 }
 
-function asExaSearchType(value: unknown): ExaSearchType | undefined {
-  return value === "neural" ||
-    value === "fast" ||
-    value === "auto" ||
-    value === "deep" ||
-    value === "deep-reasoning" ||
-    value === "instant"
-    ? value
-    : undefined
-}
-
-function asExaCategory(value: unknown): ExaCategory | undefined {
-  return value === "company" ||
-    value === "people" ||
-    value === "research paper" ||
-    value === "news" ||
-    value === "tweet" ||
-    value === "personal site" ||
-    value === "financial report"
-    ? value
-    : undefined
-}
-
-function asTavilySearchDepth(value: unknown): TavilySearchDepth | undefined {
-  return value === "basic" || value === "advanced" || value === "fast" || value === "ultra-fast" ? value : undefined
-}
-
 function asTavilyAnswerMode(value: unknown): TavilyAnswerMode | undefined {
-  return value === true || value === false || value === "basic" || value === "advanced" ? value : undefined
-}
-
-function asParallelSearchMode(value: unknown): ParallelSearchMode | undefined {
-  return asNonEmptyString(value)
-}
-
-function asPerplexityApiMode(value: unknown): PerplexityApiMode | undefined {
-  return value === "search" || value === "chat" ? value : undefined
-}
-
-function asBraveSafeSearch(value: unknown): BraveSafeSearch | undefined {
-  return value === "off" || value === "moderate" || value === "strict" ? value : undefined
-}
-
-function asAnthropicToolVersion(value: unknown): AnthropicToolVersion | undefined {
-  return value === "web_search_20250305" || value === "web_search_20260209" ? value : undefined
+  return value === true || value === false ? value : asEnum(value, TAVILY_ANSWER_MODES)
 }
 
 function asBoolean(value: unknown): boolean | undefined {
@@ -372,86 +406,62 @@ function asStringArray(value: unknown): string[] | undefined {
   return strings.length > 0 ? strings : undefined
 }
 
-function asOpenAIReasoningEffort(value: unknown): OpenAIReasoningEffort | undefined {
-  return value === "low" || value === "medium" || value === "high" ? value : undefined
-}
-
-function asOpenAISearchContextSize(value: unknown): OpenAISearchContextSize | undefined {
-  return value === "low" || value === "medium" || value === "high" ? value : undefined
-}
-
-function asOpenAIApiMode(value: unknown): OpenAIApiMode | undefined {
-  return value === "auto" || value === "responses" || value === "chat_completions_search" ? value : undefined
-}
-
 export const clawlerConfigSchema = {
   type: "object",
   additionalProperties: false,
   properties: {
     provider: {
       type: "string",
-      default: "auto",
-      enum: ["auto", "brave", "exa", "tavily", "perplexity", "parallel", "gemini", "openai", "anthropic"],
+      default: DEFAULT_CONFIG.provider,
+      enum: [...PROVIDER_SELECTIONS],
     },
     fallback: {
       type: "array",
       items: {
         type: "string",
-        enum: ["brave", "exa", "tavily", "perplexity", "parallel", "gemini", "openai", "anthropic"],
+        enum: [...providerIds],
       },
-      default: [],
-      description: "Fallback providers tried in order if the primary fails. Only errors trigger fallback; empty results are valid. Per-call provider param skips fallback.",
+      default: [...DEFAULT_CONFIG.fallback],
+      description:
+        "Fallback providers tried in order if the primary fails. Only errors trigger fallback; empty results are valid. Per-call provider param skips fallback.",
     },
     toolName: {
       type: "string",
-      default: "clawler",
+      default: DEFAULT_CONFIG.toolName,
     },
     maxResults: {
       type: "number",
-      default: 5,
+      default: DEFAULT_CONFIG.maxResults,
       minimum: 1,
       maximum: 20,
     },
     cacheTtlMinutes: {
       type: "number",
-      default: 15,
+      default: DEFAULT_CONFIG.cacheTtlMinutes,
       minimum: 0,
     },
     timeoutSeconds: {
       type: "number",
-      default: 60,
+      default: DEFAULT_CONFIG.timeoutSeconds,
       minimum: 1,
     },
     searchDefaults: {
       type: "object",
       additionalProperties: false,
-      properties: {
-        freshness: { type: "string" },
-        country: { type: "string" },
-        searchLang: { type: "string" },
-        topic: { type: "string" },
-        includeDomains: {
-          type: "array",
-          items: { type: "string" },
-        },
-        excludeDomains: {
-          type: "array",
-          items: { type: "string" },
-        },
-      },
+      properties: SHARED_SEARCH_SCHEMA_PROPERTIES,
     },
     brave: {
       type: "object",
       additionalProperties: false,
       properties: {
-        apiKey: { type: "string" },
+        apiKey: STRING_PROPERTY,
         enableRichResults: {
           type: "boolean",
-          default: true,
+          default: DEFAULT_CONFIG.brave.enableRichResults,
         },
         safesearch: {
           type: "string",
-          enum: ["off", "moderate", "strict"],
+          enum: [...BRAVE_SAFE_SEARCH_VALUES],
         },
       },
     },
@@ -459,15 +469,15 @@ export const clawlerConfigSchema = {
       type: "object",
       additionalProperties: false,
       properties: {
-        apiKey: { type: "string" },
+        apiKey: STRING_PROPERTY,
         type: {
           type: "string",
-          default: "auto",
-          enum: ["neural", "fast", "auto", "deep", "deep-reasoning", "instant"],
+          default: DEFAULT_CONFIG.exa.type,
+          enum: [...EXA_SEARCH_TYPES],
         },
         category: {
           type: "string",
-          enum: ["company", "people", "research paper", "news", "tweet", "personal site", "financial report"],
+          enum: [...EXA_CATEGORIES],
         },
         maxAgeHours: {
           type: "integer",
@@ -479,19 +489,19 @@ export const clawlerConfigSchema = {
       type: "object",
       additionalProperties: false,
       properties: {
-        apiKey: { type: "string" },
+        apiKey: STRING_PROPERTY,
         searchDepth: {
           type: "string",
-          default: "advanced",
-          enum: ["basic", "advanced", "fast", "ultra-fast"],
+          default: DEFAULT_CONFIG.tavily.searchDepth,
+          enum: [...TAVILY_SEARCH_DEPTHS],
         },
         includeAnswer: {
-          oneOf: [{ type: "boolean" }, { type: "string", enum: ["basic", "advanced"] }],
-          default: true,
+          oneOf: [{ type: "boolean" }, { type: "string", enum: [...TAVILY_ANSWER_MODES] }],
+          default: DEFAULT_CONFIG.tavily.includeAnswer,
         },
         autoParameters: {
           type: "boolean",
-          default: true,
+          default: DEFAULT_CONFIG.tavily.autoParameters,
         },
         chunksPerSource: {
           type: "integer",
@@ -499,11 +509,11 @@ export const clawlerConfigSchema = {
         },
         includeRawContent: {
           type: "boolean",
-          default: false,
+          default: DEFAULT_CONFIG.tavily.includeRawContent,
         },
         exactMatch: {
           type: "boolean",
-          default: false,
+          default: DEFAULT_CONFIG.tavily.exactMatch,
         },
       },
     },
@@ -511,30 +521,30 @@ export const clawlerConfigSchema = {
       type: "object",
       additionalProperties: false,
       properties: {
-        apiKey: { type: "string" },
+        apiKey: STRING_PROPERTY,
         apiMode: {
           type: "string",
-          default: "search",
-          enum: ["search", "chat"],
+          default: DEFAULT_CONFIG.perplexity.apiMode,
+          enum: [...PERPLEXITY_API_MODES],
         },
         baseUrl: {
           type: "string",
-          default: "https://api.perplexity.ai",
+          default: DEFAULT_CONFIG.perplexity.baseUrl,
         },
         model: {
           type: "string",
-          default: "sonar-pro",
+          default: DEFAULT_CONFIG.perplexity.model,
         },
         maxTokens: {
           type: "integer",
-          default: 4000,
+          default: DEFAULT_CONFIG.perplexity.maxTokens,
           minimum: 1,
           maximum: 1000000,
           description: "Maximum total tokens for search context (API default: 10000)",
         },
         maxTokensPerPage: {
           type: "integer",
-          default: 2000,
+          default: DEFAULT_CONFIG.perplexity.maxTokensPerPage,
           minimum: 1,
           maximum: 1000000,
           description: "Maximum tokens per page snippet (API default: 4096)",
@@ -545,19 +555,19 @@ export const clawlerConfigSchema = {
       type: "object",
       additionalProperties: false,
       properties: {
-        apiKey: { type: "string" },
+        apiKey: STRING_PROPERTY,
         mode: {
           type: "string",
-          default: "one-shot",
+          default: DEFAULT_CONFIG.parallel.mode,
         },
         maxCharsPerResult: {
           type: "number",
-          default: 5000,
+          default: DEFAULT_CONFIG.parallel.maxCharsPerResult,
           minimum: 100,
         },
         maxCharsTotal: {
           type: "number",
-          default: 50000,
+          default: DEFAULT_CONFIG.parallel.maxCharsTotal,
           minimum: 100,
         },
         maxAgeSeconds: {
@@ -570,10 +580,10 @@ export const clawlerConfigSchema = {
       type: "object",
       additionalProperties: false,
       properties: {
-        apiKey: { type: "string" },
+        apiKey: STRING_PROPERTY,
         model: {
           type: "string",
-          default: "gemini-2.5-flash",
+          default: DEFAULT_CONFIG.gemini.model,
         },
         dynamicThreshold: {
           type: "number",
@@ -586,86 +596,70 @@ export const clawlerConfigSchema = {
       type: "object",
       additionalProperties: false,
       properties: {
-        apiKey: { type: "string" },
+        apiKey: STRING_PROPERTY,
         apiMode: {
           type: "string",
-          default: "auto",
-          enum: ["auto", "responses", "chat_completions_search"],
+          default: DEFAULT_CONFIG.openai.apiMode,
+          enum: [...OPENAI_API_MODES],
         },
         model: {
           type: "string",
-          default: "gpt-5-mini",
+          default: DEFAULT_CONFIG.openai.model,
         },
         chatCompletionsModel: {
           type: "string",
-          default: "gpt-5-search-api",
+          default: DEFAULT_CONFIG.openai.chatCompletionsModel,
         },
         reasoningEffort: {
           type: "string",
-          default: "low",
-          enum: ["low", "medium", "high"],
+          default: DEFAULT_CONFIG.openai.reasoningEffort,
+          enum: [...OPENAI_REASONING_EFFORTS],
         },
         searchContextSize: {
           type: "string",
-          default: "medium",
-          enum: ["low", "medium", "high"],
+          default: DEFAULT_CONFIG.openai.searchContextSize,
+          enum: [...OPENAI_SEARCH_CONTEXT_SIZES],
         },
         includeSources: {
           type: "boolean",
-          default: true,
+          default: DEFAULT_CONFIG.openai.includeSources,
         },
         externalWebAccess: {
           type: "boolean",
-          default: true,
+          default: DEFAULT_CONFIG.openai.externalWebAccess,
         },
-        city: {
-          type: "string",
-        },
-        region: {
-          type: "string",
-        },
-        timezone: {
-          type: "string",
-        },
+        ...LOCATION_SCHEMA_PROPERTIES,
       },
     },
     anthropic: {
       type: "object",
       additionalProperties: false,
       properties: {
-        apiKey: { type: "string" },
+        apiKey: STRING_PROPERTY,
         model: {
           type: "string",
-          default: "claude-sonnet-4-6",
+          default: DEFAULT_CONFIG.anthropic.model,
         },
         toolVersion: {
           type: "string",
-          default: "web_search_20260209",
-          enum: ["web_search_20250305", "web_search_20260209"],
+          default: DEFAULT_CONFIG.anthropic.toolVersion,
+          enum: [...ANTHROPIC_TOOL_VERSIONS],
         },
         maxTokens: {
           type: "number",
-          default: 4096,
+          default: DEFAULT_CONFIG.anthropic.maxTokens,
           minimum: 1,
         },
         maxUses: {
           type: "number",
-          default: 5,
+          default: DEFAULT_CONFIG.anthropic.maxUses,
           minimum: 1,
         },
         directOnly: {
           type: "boolean",
-          default: true,
+          default: DEFAULT_CONFIG.anthropic.directOnly,
         },
-        city: {
-          type: "string",
-        },
-        region: {
-          type: "string",
-        },
-        timezone: {
-          type: "string",
-        },
+        ...LOCATION_SCHEMA_PROPERTIES,
       },
     },
   },

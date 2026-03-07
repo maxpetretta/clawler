@@ -19,6 +19,10 @@ type ParallelRequestConfig = BetterSearchConfig["parallel"] & {
 
 export function buildParallelRequest(query: string, options: SearchOptions, config: ParallelRequestConfig) {
   const freshness = parseFreshness(options.freshness)
+  const excerpts: Record<string, number> = {
+    max_chars_per_result: config.maxCharsPerResult,
+    max_chars_total: config.maxCharsTotal,
+  }
   const body: Record<string, unknown> = {
     objective: buildPromptWithGuidance(query, options, {
       includeDomains: true,
@@ -28,9 +32,7 @@ export function buildParallelRequest(query: string, options: SearchOptions, conf
     search_queries: [query],
     mode: config.mode,
     max_results: options.maxResults ?? 5,
-    excerpts: {
-      max_chars_per_result: config.maxCharsPerResult,
-    },
+    excerpts,
   }
 
   const sourcePolicy: Record<string, unknown> = {}
@@ -51,6 +53,12 @@ export function buildParallelRequest(query: string, options: SearchOptions, conf
 
   if (Object.keys(sourcePolicy).length > 0) {
     body.source_policy = sourcePolicy
+  }
+
+  if (config.maxAgeSeconds) {
+    body.fetch_policy = {
+      max_age_seconds: config.maxAgeSeconds,
+    }
   }
 
   return {

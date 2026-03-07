@@ -1,4 +1,4 @@
-import type { BetterSearchConfig } from "../config"
+import type { ClawlerConfig } from "../config"
 
 export const providerIds = [
   "brave",
@@ -53,7 +53,7 @@ export type SearchResult = {
 }
 
 export type SearchProviderContext = {
-  config: BetterSearchConfig
+  config: ClawlerConfig
   env: Record<string, string | undefined>
   fetch: typeof fetch
 }
@@ -63,7 +63,7 @@ export type SearchProvider = {
   name: string
   envVars: string[]
   category: "traditional" | "llm" | "hybrid"
-  isAvailable(config: BetterSearchConfig, env?: Record<string, string | undefined>): boolean
+  isAvailable(config: ClawlerConfig, env?: Record<string, string | undefined>): boolean
   search(query: string, options: SearchOptions, context: SearchProviderContext): Promise<SearchResult>
 }
 

@@ -14,7 +14,7 @@ import {
 
 describe("persistSetupToOpenClawConfig", () => {
   test("writes a new OpenClaw config file when none exists", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "better-search-test-"))
+    const dir = await mkdtemp(join(tmpdir(), "clawler-test-"))
     const configPath = join(dir, "openclaw.json")
 
     await persistSetupToOpenClawConfig(
@@ -31,10 +31,10 @@ describe("persistSetupToOpenClawConfig", () => {
     expect(saved).toMatchObject({
       tools: { deny: ["web_search"] },
       plugins: {
-        allow: ["better-search"],
+        allow: ["clawler"],
         load: { paths: ["/plugin/path"] },
         entries: {
-          "better-search": {
+          "clawler": {
             enabled: true,
             config: {
               provider: "exa",
@@ -50,17 +50,17 @@ describe("persistSetupToOpenClawConfig", () => {
     expect(defaultOpenClawConfigPath("/tmp/home")).toBe("/tmp/home/.openclaw/openclaw.json")
     expect(defaultOpenClawStateDir("/tmp/home")).toBe("/tmp/home/.openclaw")
     expect(defaultPluginPath()).toContain("/packages/plugin")
-    expect(defaultSkillPackagePath()).toContain("/packages/skill/better-search")
+    expect(defaultSkillPackagePath()).toContain("/packages/skill/clawler")
   })
 
-  test("installs the standalone Better Search skill into the managed OpenClaw skills directory", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "better-search-skill-"))
+  test("installs the standalone Clawler skill into the managed OpenClaw skills directory", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "clawler-skill-"))
     const configPath = join(dir, "openclaw.json")
     const sourcePath = join(dir, "source-skill")
     const installedPath = resolveOpenClawSkillInstallPath(dir)
 
     await mkdir(sourcePath, { recursive: true })
-    await writeFile(join(sourcePath, "SKILL.md"), "# Better Search\n", "utf8")
+    await writeFile(join(sourcePath, "SKILL.md"), "# Clawler\n", "utf8")
     await mkdir(installedPath, { recursive: true })
     await writeFile(join(installedPath, "SKILL.md"), "old skill\n", "utf8")
 
@@ -73,7 +73,7 @@ describe("persistSetupToOpenClawConfig", () => {
       installedPath,
       sourcePath,
     })
-    expect(await readFile(join(installedPath, "SKILL.md"), "utf8")).toContain("# Better Search")
+    expect(await readFile(join(installedPath, "SKILL.md"), "utf8")).toContain("# Clawler")
   })
 
   test("throws when HOME is not available", () => {

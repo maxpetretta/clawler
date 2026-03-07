@@ -1,4 +1,4 @@
-import type { BetterSearchConfig } from "../config"
+import type { ClawlerConfig } from "../config"
 import { buildPromptWithGuidance, normalizeDomains, requestJson, resolveApiKey } from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
 
@@ -42,7 +42,7 @@ type OpenAIChatCompletionsResponse = {
   }>
 }
 
-type OpenAIRequestConfig = BetterSearchConfig["openai"] & {
+type OpenAIRequestConfig = ClawlerConfig["openai"] & {
   apiKey: string
   timeoutSeconds: number
 }
@@ -235,7 +235,7 @@ export const openaiProvider: SearchProvider = {
 
 export function shouldUseOpenAIChatCompletions(
   options: SearchOptions,
-  apiMode: BetterSearchConfig["openai"]["apiMode"],
+  apiMode: ClawlerConfig["openai"]["apiMode"],
 ): boolean {
   if (apiMode === "chat_completions_search") {
     return true

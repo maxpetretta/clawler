@@ -1,4 +1,4 @@
-import type { BetterSearchConfig } from "../config"
+import type { ClawlerConfig } from "../config"
 import { parseFreshness } from "./freshness"
 import { asSearchResultItem, buildPromptWithGuidance, normalizeDomains, requestJson, resolveApiKey } from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
@@ -12,7 +12,7 @@ type ParallelResponse = {
   }>
 }
 
-type ParallelRequestConfig = BetterSearchConfig["parallel"] & {
+type ParallelRequestConfig = ClawlerConfig["parallel"] & {
   apiKey: string
   timeoutSeconds: number
 }

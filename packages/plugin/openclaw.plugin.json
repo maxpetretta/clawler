@@ -1,6 +1,6 @@
 {
-  "id": "better-search",
-  "name": "Better Search",
+  "id": "clawler",
+  "name": "Clawler",
   "kind": "tool",
   "skills": ["./skills"],
   "configSchema": {
@@ -14,7 +14,7 @@
       },
       "toolName": {
         "type": "string",
-        "default": "better_search"
+        "default": "search_web"
       },
       "maxResults": {
         "type": "number",

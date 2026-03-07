@@ -1,4 +1,4 @@
-import type { BetterSearchConfig } from "../config"
+import type { ClawlerConfig } from "../config"
 import { buildPromptWithGuidance, dedupeStrings, normalizeDomains, requestJson, resolveApiKey } from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
 
@@ -32,7 +32,7 @@ type AnthropicResponse = {
   content?: AnthropicContentBlock[]
 }
 
-type AnthropicRequestConfig = BetterSearchConfig["anthropic"] & {
+type AnthropicRequestConfig = ClawlerConfig["anthropic"] & {
   apiKey: string
   timeoutSeconds: number
 }

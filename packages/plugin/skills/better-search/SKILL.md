@@ -1,1 +1,0 @@
-../../../skill/better-search/SKILL.md

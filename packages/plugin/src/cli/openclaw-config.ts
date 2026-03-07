@@ -1,14 +1,14 @@
 import { cp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
-import type { BetterSearchProviderSelection } from "../config"
+import type { ClawlerProviderSelection } from "../config"
 
 type OpenClawJson = Record<string, unknown>
 export const OPENCLAW_SKILLS_DIRNAME = "skills"
-export const BETTER_SEARCH_SKILL_SLUG = "better-search"
+export const CLAWLER_SKILL_SLUG = "clawler"
 
 export type SetupPersistenceInput = {
-  provider: BetterSearchProviderSelection
+  provider: ClawlerProviderSelection
   shouldDenyBuiltin: boolean
   providerApiKey?: string
   pluginPath?: string
@@ -41,11 +41,11 @@ export function defaultOpenClawStateDir(homeDir = process.env.HOME): string {
 }
 
 export function defaultSkillPackagePath(): string {
-  return fileURLToPath(new URL("../../../skill/better-search", import.meta.url))
+  return fileURLToPath(new URL("../../../skill/clawler", import.meta.url))
 }
 
 export function resolveOpenClawSkillInstallPath(stateDir = defaultOpenClawStateDir()): string {
-  return join(stateDir, OPENCLAW_SKILLS_DIRNAME, BETTER_SEARCH_SKILL_SLUG)
+  return join(stateDir, OPENCLAW_SKILLS_DIRNAME, CLAWLER_SKILL_SLUG)
 }
 
 export function applySetupToOpenClawConfig(
@@ -55,14 +55,14 @@ export function applySetupToOpenClawConfig(
   const next = structuredClone(document)
   const plugins = ensureRecord(next, "plugins")
   const allow = ensureStringArray(plugins, "allow")
-  appendUnique(allow, "better-search")
+  appendUnique(allow, "clawler")
 
   const load = ensureRecord(plugins, "load")
   const paths = ensureStringArray(load, "paths")
   appendUnique(paths, pluginPath)
 
   const entries = ensureRecord(plugins, "entries")
-  const pluginEntry = ensureRecord(entries, "better-search")
+  const pluginEntry = ensureRecord(entries, "clawler")
   pluginEntry.enabled = true
 
   const pluginConfig = ensureRecord(pluginEntry, "config")

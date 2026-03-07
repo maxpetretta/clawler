@@ -1,21 +1,21 @@
 import type { OpenClawPluginApi, OpenClawPluginDefinition } from "openclaw/plugin-sdk"
-import { registerBetterSearchCli } from "./cli/commands"
-import { betterSearchConfigSchema, resolveConfig } from "./config"
-import { createBetterSearchTool } from "./tool"
+import { registerClawlerCli } from "./cli/commands"
+import { clawlerConfigSchema, resolveConfig } from "./config"
+import { createClawlerTool } from "./tool"
 
-const betterSearchPlugin: OpenClawPluginDefinition = {
-  id: "better-search",
-  name: "Better Search",
+const clawlerPlugin: OpenClawPluginDefinition = {
+  id: "clawler",
+  name: "Clawler",
   description: "Unified search providers for OpenClaw",
   kind: "tool",
-  configSchema: betterSearchConfigSchema,
+  configSchema: clawlerConfigSchema,
   register(api: OpenClawPluginApi) {
     const config = resolveConfig(api.pluginConfig)
 
-    registerBetterSearchCli(api, config)
+    registerClawlerCli(api, config)
 
-    api.registerTool(() => createBetterSearchTool(config), { names: [config.toolName] })
+    api.registerTool(() => createClawlerTool(config), { names: [config.toolName] })
   },
 }
 
-export default betterSearchPlugin
+export default clawlerPlugin

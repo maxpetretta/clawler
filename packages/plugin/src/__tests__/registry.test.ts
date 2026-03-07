@@ -58,7 +58,7 @@ describe("provider registry", () => {
 
   test("throws when no providers are available in auto mode", () => {
     expect(() => resolveProvider(resolveConfig({}), {})).toThrow(
-      "No search provider credentials found. Configure Better Search or set one of the supported provider API keys.",
+      "No search provider credentials found. Run `openclaw clawler setup` or set a provider API key.",
     )
   })
 })

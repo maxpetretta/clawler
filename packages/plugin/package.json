@@ -1,16 +1,16 @@
 {
-  "name": "better-search",
-  "version": "0.1.0",
+  "name": "clawler",
+  "version": "2026.3.7",
   "description": "Universal web search plugin for OpenClaw",
   "license": "MIT",
-  "repository": "https://github.com/maxpetretta/better-search",
-  "homepage": "https://github.com/maxpetretta/better-search",
+  "repository": "https://github.com/maxpetretta/clawler",
+  "homepage": "https://github.com/maxpetretta/clawler",
   "keywords": [
     "openclaw",
     "search",
     "plugin",
     "web-search",
-    "better-search"
+    "clawler"
   ],
   "type": "module",
   "main": "src/plugin.ts",

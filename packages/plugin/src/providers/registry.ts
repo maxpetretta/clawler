@@ -1,4 +1,4 @@
-import type { BetterSearchConfig } from "../config"
+import type { ClawlerConfig } from "../config"
 import { anthropicProvider } from "./anthropic"
 import { braveProvider } from "./brave"
 import { exaProvider } from "./exa"
@@ -22,7 +22,7 @@ export const providersInPriorityOrder = [
 ] as const satisfies readonly SearchProvider[]
 
 export function listProviderStatuses(
-  config: BetterSearchConfig,
+  config: ClawlerConfig,
   env: Record<string, string | undefined> = process.env,
 ): ProviderStatus[] {
   return providersInPriorityOrder.map((provider) => {
@@ -49,7 +49,7 @@ export function getProviderById(id: ProviderId): SearchProvider {
 }
 
 export function resolveProvider(
-  config: BetterSearchConfig,
+  config: ClawlerConfig,
   env: Record<string, string | undefined> = process.env,
   requestedProvider?: ProviderId,
 ): SearchProvider {
@@ -81,7 +81,7 @@ export function resolveProvider(
 
   if (!detectedProvider) {
     throw new Error(
-      "No search provider credentials found. Configure Better Search or set one of the supported provider API keys.",
+      "No search provider credentials found. Run `openclaw clawler setup` or set a provider API key.",
     )
   }
 

@@ -1,10 +1,10 @@
 import { SearchCache } from "./cache"
-import type { BetterSearchConfig } from "./config"
+import type { ClawlerConfig } from "./config"
 import { formatSearchResult } from "./format"
 import { resolveProvider } from "./providers/registry"
 import { isProviderId, type ProviderId, providerIds, type SearchOptions } from "./providers/types"
 
-type BetterSearchToolParams = {
+type ClawlerToolParams = {
   query: string
   provider?: ProviderId
   count?: number
@@ -16,13 +16,13 @@ type BetterSearchToolParams = {
   exclude_domains?: string[]
 }
 
-export function createBetterSearchTool(config: BetterSearchConfig) {
+export function createClawlerTool(config: ClawlerConfig) {
   const cache = new SearchCache<string>(config.cacheTtlMinutes * 60 * 1000)
 
   return {
     name: config.toolName,
     description:
-      "Search the web using the configured Better Search provider. Use this instead of the built-in web_search tool.",
+      "Search the web.",
     parameters: {
       type: "object",
       properties: {
@@ -50,7 +50,7 @@ export function createBetterSearchTool(config: BetterSearchConfig) {
       },
       required: ["query"],
     },
-    async execute(_toolCallId: string, params: BetterSearchToolParams) {
+    async execute(_toolCallId: string, params: ClawlerToolParams) {
       const query = params.query.trim()
 
       if (query.length === 0) {
@@ -84,7 +84,7 @@ export function createBetterSearchTool(config: BetterSearchConfig) {
   }
 }
 
-export function resolveSearchOptions(config: BetterSearchConfig, params: BetterSearchToolParams): SearchOptions {
+export function resolveSearchOptions(config: ClawlerConfig, params: ClawlerToolParams): SearchOptions {
   return {
     maxResults: params.count ?? config.maxResults,
     freshness: params.freshness ?? config.searchDefaults.freshness,

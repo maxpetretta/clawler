@@ -1,4 +1,4 @@
-import type { BetterSearchConfig } from "../config"
+import type { ClawlerConfig } from "../config"
 import { fetchJson, type JsonRequest } from "../http"
 import { describeFreshness } from "./freshness"
 import type { ProviderId, SearchOptions, SearchProviderContext, SearchResultItem } from "./types"
@@ -107,7 +107,7 @@ export function dedupeStrings(values: Array<string | undefined> | undefined): st
 }
 
 export function resolveApiKey(
-  config: BetterSearchConfig,
+  config: ClawlerConfig,
   providerId: ProviderId,
   env: Record<string, string | undefined>,
 ): string | undefined {
@@ -150,7 +150,7 @@ export function providerEnvVars(providerId: ProviderId): string[] {
 }
 
 export function providerCredentialSource(
-  config: BetterSearchConfig,
+  config: ClawlerConfig,
   providerId: ProviderId,
   env: Record<string, string | undefined>,
 ): "config" | "env" | "missing" {
@@ -178,7 +178,7 @@ export function asSearchResultItem(item: SearchResultItem): SearchResultItem {
   }
 }
 
-function readProviderApiKey(config: BetterSearchConfig, providerId: ProviderId): string | undefined {
+function readProviderApiKey(config: ClawlerConfig, providerId: ProviderId): string | undefined {
   if (providerId === "brave") {
     return config.brave.apiKey
   }

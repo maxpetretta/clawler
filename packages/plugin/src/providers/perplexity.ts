@@ -1,4 +1,4 @@
-import type { BetterSearchConfig } from "../config"
+import type { ClawlerConfig } from "../config"
 import { parseFreshness, toUsDate } from "./freshness"
 import { buildPromptWithGuidance, dedupeStrings, normalizeDomains, requestJson, resolveApiKey } from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
@@ -21,7 +21,7 @@ type PerplexityResponse = {
   search_results?: PerplexitySearchResult[]
 }
 
-type PerplexityRequestConfig = BetterSearchConfig["perplexity"] & {
+type PerplexityRequestConfig = ClawlerConfig["perplexity"] & {
   apiKey: string
   timeoutSeconds: number
   viaOpenRouter: boolean

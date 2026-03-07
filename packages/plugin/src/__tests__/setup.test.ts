@@ -62,8 +62,8 @@ function createDeps() {
       }
 
       return Promise.resolve({
-        installedPath: "/tmp/skills/better-search",
-        sourcePath: "/repo/packages/skill/better-search",
+        installedPath: "/tmp/skills/clawler",
+        sourcePath: "/repo/packages/skill/clawler",
       })
     },
     defaultPluginPath() {
@@ -110,8 +110,8 @@ describe("runSetupWizard", () => {
     ])
     expect(state.installSkillCalls).toEqual([{ configPath: "/tmp/openclaw.json" }])
     expect(state.noteCalls.map((entry) => entry.title)).toEqual(["Detected providers", "Persisted config"])
-    expect(state.noteCalls[1]?.message).toContain("skill path: /tmp/skills/better-search")
-    expect(state.outroMessages).toEqual(["Saved Better Search setup to /tmp/openclaw.json"])
+    expect(state.noteCalls[1]?.message).toContain("skill path: /tmp/skills/clawler")
+    expect(state.outroMessages).toEqual(["Saved Clawler setup to /tmp/openclaw.json"])
   })
 
   test("warns but still completes when skill installation fails", async () => {
@@ -129,7 +129,7 @@ describe("runSetupWizard", () => {
     ])
     expect(state.noteCalls[1]?.message).toContain("skill path: install failed")
     expect(state.noteCalls[2]?.message).toContain("copy failed")
-    expect(state.outroMessages).toEqual(["Saved Better Search setup to /tmp/openclaw.json"])
+    expect(state.outroMessages).toEqual(["Saved Clawler setup to /tmp/openclaw.json"])
   })
 
   test("cancels immediately when provider selection is canceled", async () => {

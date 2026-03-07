@@ -1,4 +1,4 @@
-import type { BetterSearchConfig } from "../config"
+import type { ClawlerConfig } from "../config"
 import { parseFreshness } from "./freshness"
 import { asSearchResultItem, buildQueryWithDomainFilters, requestJson, resolveApiKey } from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
@@ -29,7 +29,7 @@ export function buildBraveRequest(
   options: SearchOptions,
   apiKey: string,
   timeoutSeconds: number,
-  config: BetterSearchConfig["brave"] = { enableRichResults: true },
+  config: ClawlerConfig["brave"] = { enableRichResults: true },
 ) {
   const params = new URLSearchParams({
     q: buildQueryWithDomainFilters(query, options),

@@ -1,5 +1,5 @@
 import { cancel, confirm, intro, isCancel, note, outro, password, select } from "@clack/prompts"
-import type { BetterSearchConfig, BetterSearchProviderSelection } from "../config"
+import type { ClawlerConfig, ClawlerProviderSelection } from "../config"
 import { listProviderStatuses } from "../providers/registry"
 import { defaultPluginPath, installOpenClawSkill, persistSetupToOpenClawConfig } from "./openclaw-config"
 
@@ -40,10 +40,10 @@ const defaultSetupWizardDeps: SetupWizardDeps = {
 }
 
 export async function runSetupWizard(
-  config: BetterSearchConfig,
+  config: ClawlerConfig,
   deps: SetupWizardDeps = defaultSetupWizardDeps,
 ): Promise<void> {
-  deps.prompts.intro("Better Search setup")
+  deps.prompts.intro("Clawler setup")
 
   const selectedProvider = await deps.prompts.select({
     message: "Choose a default provider",
@@ -115,7 +115,7 @@ export async function runSetupWizard(
     const skillInstall = await deps.installOpenClawSkill({ configPath })
     installedSkillPath = skillInstall.installedPath
   } catch (error) {
-    skillInstallError = `Failed to install Better Search skill: ${String(error)}`
+    skillInstallError = `Failed to install Clawler skill: ${String(error)}`
   }
 
   deps.prompts.note(
@@ -132,11 +132,11 @@ export async function runSetupWizard(
     deps.prompts.note(skillInstallError, "Skill install warning")
   }
 
-  deps.prompts.outro(`Saved Better Search setup to ${configPath}`)
+  deps.prompts.outro(`Saved Clawler setup to ${configPath}`)
 }
 
 async function promptForApiKey(
-  provider: BetterSearchProviderSelection,
+  provider: ClawlerProviderSelection,
   prompts: SetupWizardPromptApi,
 ): Promise<string | undefined> {
   if (provider === "auto") {

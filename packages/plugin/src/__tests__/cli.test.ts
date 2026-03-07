@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { registerBetterSearchCli } from "../cli/commands"
+import { registerClawlerCli } from "../cli/commands"
 import { renderProviderStatus } from "../cli/status"
 import { resolveConfig } from "../config"
 
@@ -59,10 +59,10 @@ describe("CLI helpers", () => {
       },
     }
 
-    registerBetterSearchCli(api as never, resolveConfig({}))
+    registerClawlerCli(api as never, resolveConfig({}))
 
-    expect(registerCliCalls).toEqual([{ commands: ["better-search"] }])
-    expect(root.children.map((child) => child.name)).toEqual(["better-search"])
+    expect(registerCliCalls).toEqual([{ commands: ["clawler"] }])
+    expect(root.children.map((child) => child.name)).toEqual(["clawler"])
     expect(root.children[0]?.children.map((child) => child.name)).toEqual(["setup", "status"])
   })
 })

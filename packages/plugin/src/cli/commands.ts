@@ -1,21 +1,21 @@
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk"
-import type { BetterSearchConfig } from "../config"
+import type { ClawlerConfig } from "../config"
 import type { CommandLike } from "./command-like"
 import { runSetupWizard } from "./setup"
 import { renderProviderStatus } from "./status"
 
-function registerBetterSearchCommands(program: unknown, config: BetterSearchConfig): void {
+function registerClawlerCommands(program: unknown, config: ClawlerConfig): void {
   const root = program as CommandLike
-  const betterSearch = root.command("better-search").description("Manage Better Search providers and setup")
+  const clawler = root.command("clawler").description("Manage Clawler providers and setup")
 
-  betterSearch
+  clawler
     .command("setup")
     .description("Interactive setup wizard")
     .action(async () => {
       await runSetupWizard(config)
     })
 
-  betterSearch
+  clawler
     .command("status")
     .description("Show provider credential status")
     .action(() => {
@@ -23,11 +23,11 @@ function registerBetterSearchCommands(program: unknown, config: BetterSearchConf
     })
 }
 
-export function registerBetterSearchCli(api: OpenClawPluginApi, config: BetterSearchConfig): void {
+export function registerClawlerCli(api: OpenClawPluginApi, config: ClawlerConfig): void {
   api.registerCli(
     ({ program }) => {
-      registerBetterSearchCommands(program, config)
+      registerClawlerCommands(program, config)
     },
-    { commands: ["better-search"] },
+    { commands: ["clawler"] },
   )
 }

@@ -1,6 +1,6 @@
 import type { ProviderId } from "./providers/types"
 
-export type BetterSearchProviderSelection = ProviderId | "auto"
+export type ClawlerProviderSelection = ProviderId | "auto"
 export type ExaSearchType = "neural" | "fast" | "auto" | "deep" | "deep-reasoning" | "instant"
 export type ExaCategory =
   | "company"
@@ -24,7 +24,7 @@ type ApiKeyConfig = {
   apiKey?: string
 }
 
-export type BetterSearchSharedOptions = {
+export type ClawlerSharedOptions = {
   freshness?: string
   country?: string
   searchLang?: string
@@ -33,13 +33,13 @@ export type BetterSearchSharedOptions = {
   excludeDomains?: string[]
 }
 
-export type BetterSearchConfig = {
-  provider: BetterSearchProviderSelection
+export type ClawlerConfig = {
+  provider: ClawlerProviderSelection
   toolName: string
   maxResults: number
   cacheTtlMinutes: number
   timeoutSeconds: number
-  searchDefaults: BetterSearchSharedOptions
+  searchDefaults: ClawlerSharedOptions
   brave: ApiKeyConfig & {
     enableRichResults: boolean
     safesearch?: BraveSafeSearch
@@ -98,9 +98,9 @@ export type BetterSearchConfig = {
   }
 }
 
-const DEFAULT_CONFIG: BetterSearchConfig = {
+const DEFAULT_CONFIG: ClawlerConfig = {
   provider: "auto",
-  toolName: "better_search",
+  toolName: "search_web",
   maxResults: 5,
   cacheTtlMinutes: 15,
   timeoutSeconds: 60,
@@ -151,7 +151,7 @@ const DEFAULT_CONFIG: BetterSearchConfig = {
   },
 }
 
-export function resolveConfig(pluginConfig: unknown): BetterSearchConfig {
+export function resolveConfig(pluginConfig: unknown): ClawlerConfig {
   if (!pluginConfig || typeof pluginConfig !== "object") {
     return DEFAULT_CONFIG
   }
@@ -285,7 +285,7 @@ function asBoundedNumber(value: unknown, min: number, max = Number.POSITIVE_INFI
   return typeof value === "number" && Number.isFinite(value) && value >= min && value <= max ? value : undefined
 }
 
-function isProviderSelection(value: unknown): value is BetterSearchProviderSelection {
+function isProviderSelection(value: unknown): value is ClawlerProviderSelection {
   return (
     value === "auto" ||
     value === "brave" ||
@@ -371,7 +371,7 @@ function asOpenAIApiMode(value: unknown): OpenAIApiMode | undefined {
   return value === "auto" || value === "responses" || value === "chat_completions_search" ? value : undefined
 }
 
-export const betterSearchConfigSchema = {
+export const clawlerConfigSchema = {
   type: "object",
   additionalProperties: false,
   properties: {
@@ -382,7 +382,7 @@ export const betterSearchConfigSchema = {
     },
     toolName: {
       type: "string",
-      default: "better_search",
+      default: "clawler",
     },
     maxResults: {
       type: "number",

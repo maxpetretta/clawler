@@ -18,8 +18,8 @@ describe("plugin definition", () => {
       },
     } as never)
 
-    expect(plugin.id).toBe("better-search")
-    expect(cliCalls).toEqual([{ commands: ["better-search"] }])
+    expect(plugin.id).toBe("clawler")
+    expect(cliCalls).toEqual([{ commands: ["clawler"] }])
     expect(toolCalls).toEqual([{ names: ["custom_search"] }])
     expect(plugin.configSchema).toBeDefined()
   })

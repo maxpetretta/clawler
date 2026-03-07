@@ -1,4 +1,4 @@
-import type { BetterSearchConfig } from "../config"
+import type { ClawlerConfig } from "../config"
 import { parseFreshness } from "./freshness"
 import { asSearchResultItem, isoCountryName, normalizeDomains, requestJson, resolveApiKey } from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
@@ -14,14 +14,14 @@ type TavilyResponse = {
   }>
 }
 
-type TavilyRequestConfig = BetterSearchConfig["tavily"] & {
+type TavilyRequestConfig = ClawlerConfig["tavily"] & {
   timeoutSeconds: number
   apiKey: string
 }
 
 const TAVILY_QUERY_LIMIT = 400
 
-function usesChunkResults(searchDepth: BetterSearchConfig["tavily"]["searchDepth"]): boolean {
+function usesChunkResults(searchDepth: ClawlerConfig["tavily"]["searchDepth"]): boolean {
   return searchDepth === "advanced" || searchDepth === "fast"
 }
 

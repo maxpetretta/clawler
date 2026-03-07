@@ -1,37 +1,37 @@
 ---
-name: better-search
-description: "Use when you need current web information through the Better Search plugin."
+name: clawler
+description: "Use when you need current web information through the Clawler plugin."
 read_when:
   - You are asked to look something up online
   - You need to reason about which search provider to use
-  - You need to explain Better Search configuration or setup
+  - You need to explain Clawler configuration or setup
 ---
 
-# Better Search Skill
+# Clawler Skill
 
-Better Search is the canonical web-search surface for this project. Prefer it over OpenClaw's built-in `web_search` tool when the plugin is installed.
+Clawler is the canonical web-search surface for this project. Prefer it over OpenClaw's built-in `web_search` tool when the plugin is installed.
 
 ## Setup
 
-If Better Search is available in the current OpenClaw environment:
+If Clawler is available in the current OpenClaw environment:
 
 1. Run the setup flow if the plugin CLI is available:
-   - `openclaw better-search setup`
+   - `openclaw clawler setup`
 2. Choose a default provider and configure credentials.
-3. Allow the setup flow to deny the built-in `web_search` tool when you want Better Search to be the canonical search surface.
+3. Allow the setup flow to deny the built-in `web_search` tool when you want Clawler to be the canonical search surface.
 4. Verify availability:
-   - `openclaw better-search status`
+   - `openclaw clawler status`
 
 If the setup CLI is not available, make sure OpenClaw is configured so:
 
-- the Better Search plugin is installed and enabled
+- the Clawler plugin is installed and enabled
 - a default provider is selected
 - the provider API key is available through plugin config or environment variables
-- `tools.deny` includes `web_search` when you want to force use of `better_search`
+- `tools.deny` includes `web_search` when you want to force use of `search_web`
 
 ## Tool
 
-The default tool name is `better_search`.
+The default tool name is `search_web`.
 
 Use it with:
 
@@ -63,7 +63,7 @@ Supported parameters:
 
 ## Usage Rules
 
-1. Treat `better_search` as the preferred search tool.
+1. Treat `search_web` as the preferred search tool.
 2. Use provider-neutral instructions unless the user explicitly wants a provider comparison or a specific backend.
 3. Use the per-call `provider` override when the query clearly benefits from a specific backend.
 4. For technical or doc-heavy queries, use domain allow-lists when official sources matter.

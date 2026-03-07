@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { applySetupToOpenClawConfig } from "../cli/openclaw-config"
 
 describe("OpenClaw config persistence", () => {
-  test("adds Better Search plugin config without removing unrelated settings", () => {
+  test("adds Clawler plugin config without removing unrelated settings", () => {
     const next = applySetupToOpenClawConfig(
       {
         tools: {
@@ -24,7 +24,7 @@ describe("OpenClaw config persistence", () => {
         provider: "openai",
         shouldDenyBuiltin: true,
         providerApiKey: "openai-key",
-        pluginPath: "/Users/max/dev/better-search/packages/plugin",
+        pluginPath: "/Users/max/dev/clawler/packages/plugin",
       },
     )
 
@@ -33,15 +33,15 @@ describe("OpenClaw config persistence", () => {
         deny: ["browser", "web_search"],
       },
       plugins: {
-        allow: ["reclaw", "better-search"],
+        allow: ["reclaw", "clawler"],
         load: {
-          paths: ["/Users/max/dev/reclaw/packages/plugin", "/Users/max/dev/better-search/packages/plugin"],
+          paths: ["/Users/max/dev/reclaw/packages/plugin", "/Users/max/dev/clawler/packages/plugin"],
         },
         entries: {
           reclaw: {
             enabled: true,
           },
-          "better-search": {
+          "clawler": {
             enabled: true,
             config: {
               provider: "openai",
@@ -62,12 +62,12 @@ describe("OpenClaw config persistence", () => {
           deny: ["web_search"],
         },
         plugins: {
-          allow: ["better-search"],
+          allow: ["clawler"],
           load: {
-            paths: ["/Users/max/dev/better-search/packages/plugin"],
+            paths: ["/Users/max/dev/clawler/packages/plugin"],
           },
           entries: {
-            "better-search": {
+            "clawler": {
               enabled: false,
               config: {
                 provider: "exa",
@@ -79,7 +79,7 @@ describe("OpenClaw config persistence", () => {
       {
         provider: "auto",
         shouldDenyBuiltin: true,
-        pluginPath: "/Users/max/dev/better-search/packages/plugin",
+        pluginPath: "/Users/max/dev/clawler/packages/plugin",
       },
     )
 
@@ -88,12 +88,12 @@ describe("OpenClaw config persistence", () => {
         deny: ["web_search"],
       },
       plugins: {
-        allow: ["better-search"],
+        allow: ["clawler"],
         load: {
-          paths: ["/Users/max/dev/better-search/packages/plugin"],
+          paths: ["/Users/max/dev/clawler/packages/plugin"],
         },
         entries: {
-          "better-search": {
+          "clawler": {
             enabled: true,
             config: {
               provider: "auto",

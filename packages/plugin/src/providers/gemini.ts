@@ -1,4 +1,4 @@
-import type { BetterSearchConfig } from "../config"
+import type { ClawlerConfig } from "../config"
 import { buildPromptWithGuidance, dedupeStrings, requestJson, resolveApiKey } from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
 
@@ -33,7 +33,7 @@ type GeminiResponse = {
   }>
 }
 
-type GeminiRequestConfig = BetterSearchConfig["gemini"] & {
+type GeminiRequestConfig = ClawlerConfig["gemini"] & {
   apiKey: string
   timeoutSeconds: number
 }

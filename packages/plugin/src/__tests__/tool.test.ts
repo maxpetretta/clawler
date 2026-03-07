@@ -1,20 +1,20 @@
 import { describe, expect, test } from "bun:test"
 import { resolveConfig } from "../config"
-import { createBetterSearchTool } from "../tool"
+import { createClawlerTool } from "../tool"
 
-describe("createBetterSearchTool", () => {
+describe("createClawlerTool", () => {
   test("exposes the configured tool name", () => {
-    const tool = createBetterSearchTool(resolveConfig({ toolName: "search_now" }))
+    const tool = createClawlerTool(resolveConfig({ toolName: "search_now" }))
     expect(tool.name).toBe("search_now")
   })
 
   test("rejects empty queries", async () => {
-    const tool = createBetterSearchTool(resolveConfig({ provider: "brave" }))
+    const tool = createClawlerTool(resolveConfig({ provider: "brave" }))
     await expect(tool.execute("id", { query: "   " })).rejects.toThrow("Query must not be empty.")
   })
 
   test("rejects unknown per-call provider overrides", async () => {
-    const tool = createBetterSearchTool(resolveConfig({ provider: "brave" }))
+    const tool = createClawlerTool(resolveConfig({ provider: "brave" }))
     await expect(tool.execute("id", { query: "search", provider: "unknown" as never })).rejects.toThrow(
       "Unknown provider: unknown",
     )
@@ -41,7 +41,7 @@ describe("createBetterSearchTool", () => {
     process.env.BRAVE_API_KEY = "key"
 
     try {
-      const tool = createBetterSearchTool(
+      const tool = createClawlerTool(
         resolveConfig({
           provider: "brave",
           searchDefaults: {
@@ -109,7 +109,7 @@ describe("createBetterSearchTool", () => {
     process.env.EXA_API_KEY = "exa-key"
 
     try {
-      const tool = createBetterSearchTool(resolveConfig({ provider: "brave" }))
+      const tool = createClawlerTool(resolveConfig({ provider: "brave" }))
       const result = await tool.execute("id", { query: "search", provider: "exa" })
 
       expect(result).toContain("(via exa)")

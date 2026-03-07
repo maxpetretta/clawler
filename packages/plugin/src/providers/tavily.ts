@@ -9,6 +9,7 @@ type TavilyResponse = {
     title?: string
     url?: string
     content?: string
+    raw_content?: string
     published_date?: string
   }>
 }
@@ -18,15 +19,53 @@ type TavilyRequestConfig = BetterSearchConfig["tavily"] & {
   apiKey: string
 }
 
+const TAVILY_QUERY_LIMIT = 400
+
+function usesChunkResults(searchDepth: BetterSearchConfig["tavily"]["searchDepth"]): boolean {
+  return searchDepth === "advanced" || searchDepth === "fast"
+}
+
+function truncateTavilyQuery(query: string): string {
+  if (query.length <= TAVILY_QUERY_LIMIT) {
+    return query
+  }
+
+  const truncated = query.slice(0, TAVILY_QUERY_LIMIT)
+  let boundary = truncated.length
+
+  while (boundary > 0 && !/\s/.test(truncated[boundary - 1] ?? "")) {
+    boundary -= 1
+  }
+
+  if (boundary === 0) {
+    return truncated.trimEnd()
+  }
+
+  return truncated.slice(0, boundary).trimEnd()
+}
+
 export function buildTavilyRequest(query: string, options: SearchOptions, config: TavilyRequestConfig) {
   const freshness = parseFreshness(options.freshness)
+  const truncatedQuery = truncateTavilyQuery(query)
   const body: Record<string, unknown> = {
     api_key: config.apiKey,
-    query,
+    query: truncatedQuery,
     search_depth: config.searchDepth,
     max_results: options.maxResults ?? 5,
     include_answer: config.includeAnswer,
     auto_parameters: config.autoParameters,
+  }
+
+  if (usesChunkResults(config.searchDepth)) {
+    body.chunks_per_source = config.chunksPerSource ?? 3
+  }
+
+  if (config.includeRawContent) {
+    body.include_raw_content = true
+  }
+
+  if (config.exactMatch) {
+    body.exact_match = true
   }
 
   if (options.topic) {

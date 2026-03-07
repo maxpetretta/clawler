@@ -3,6 +3,13 @@ import { parseFreshness, toUsDate } from "./freshness"
 import { buildPromptWithGuidance, dedupeStrings, normalizeDomains, requestJson, resolveApiKey } from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
 
+type PerplexitySearchResult = {
+  title?: string
+  url?: string
+  snippet?: string
+  date?: string
+}
+
 type PerplexityResponse = {
   choices?: Array<{
     message?: {
@@ -10,12 +17,8 @@ type PerplexityResponse = {
     }
   }>
   citations?: string[]
-  search_results?: Array<{
-    title?: string
-    url?: string
-    snippet?: string
-    date?: string
-  }>
+  results?: PerplexitySearchResult[]
+  search_results?: PerplexitySearchResult[]
 }
 
 type PerplexityRequestConfig = BetterSearchConfig["perplexity"] & {
@@ -25,6 +28,60 @@ type PerplexityRequestConfig = BetterSearchConfig["perplexity"] & {
 }
 
 export function buildPerplexityRequest(query: string, options: SearchOptions, config: PerplexityRequestConfig) {
+  return shouldUsePerplexitySearchApi(config)
+    ? buildPerplexitySearchRequest(query, options, config)
+    : buildPerplexityChatRequest(query, options, config)
+}
+
+function buildPerplexitySearchRequest(query: string, options: SearchOptions, config: PerplexityRequestConfig) {
+  const freshness = parseFreshness(options.freshness)
+  const includeDomains = normalizeDomains(options.includeDomains)
+  const excludeDomains = normalizeDomains(options.excludeDomains)
+  const body: Record<string, unknown> = {
+    query: buildPromptWithGuidance(query, options, {
+      freshness: true,
+      country: true,
+      searchLang: true,
+      includeDomains: true,
+      excludeDomains: true,
+    }),
+    model: config.model,
+    max_results: options.maxResults ?? 5,
+  }
+
+  if (options.country) {
+    body.country = options.country
+  }
+
+  if (options.searchLang) {
+    body.search_language_filter = options.searchLang
+  }
+
+  if (freshness?.kind === "relative") {
+    body.search_recency_filter = freshness.perplexity
+  } else if (freshness?.kind === "range") {
+    body.search_after_date_filter = toIsoDate(freshness.startDate)
+    body.search_before_date_filter = toIsoDate(freshness.endDate)
+  }
+
+  const domainFilter = buildSearchDomainFilter(includeDomains, excludeDomains)
+  if (domainFilter) {
+    body.search_domain_filter = domainFilter
+  }
+
+  return {
+    url: `${config.baseUrl.replace(/\/+$/u, "")}/search`,
+    method: "POST" as const,
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      "content-type": "application/json",
+    },
+    body,
+    timeoutSeconds: config.timeoutSeconds,
+  }
+}
+
+function buildPerplexityChatRequest(query: string, options: SearchOptions, config: PerplexityRequestConfig) {
   const freshness = parseFreshness(options.freshness)
   const includeDomains = normalizeDomains(options.includeDomains)
   const excludeDomains = normalizeDomains(options.excludeDomains)
@@ -74,6 +131,25 @@ export function buildPerplexityRequest(query: string, options: SearchOptions, co
   }
 }
 
+function shouldUsePerplexitySearchApi(config: PerplexityRequestConfig): boolean {
+  return config.apiMode === "search" && !config.viaOpenRouter
+}
+
+function buildSearchDomainFilter(
+  includeDomains: string[] | undefined,
+  excludeDomains: string[] | undefined,
+): string[] | undefined {
+  if (!includeDomains && !excludeDomains) {
+    return undefined
+  }
+
+  return [...(includeDomains ?? []), ...((excludeDomains ?? []).map((domain) => `-${domain}`))]
+}
+
+function toIsoDate(value: Date): string {
+  return value.toISOString().slice(0, 10)
+}
+
 export const perplexityProvider: SearchProvider = {
   id: "perplexity",
   name: "Perplexity",
@@ -100,28 +176,33 @@ export const perplexityProvider: SearchProvider = {
       viaOpenRouter,
     })
     const response = await requestJson<PerplexityResponse>("perplexity", request.url, context, request)
+    const results = normalizePerplexityResults(response.results ?? response.search_results)
 
     return {
       provider: "perplexity",
       query,
       answer: response.choices?.[0]?.message?.content?.trim(),
-      citations: dedupeStrings(response.citations ?? response.search_results?.map((entry) => entry.url)),
-      results: response.search_results?.flatMap((entry) => {
-        if (!entry.url) {
-          return []
-        }
-
-        return [
-          {
-            title: entry.title ?? entry.url,
-            url: entry.url,
-            snippet: entry.snippet ?? "",
-            publishedDate: entry.date,
-          },
-        ]
-      }),
+      citations: dedupeStrings(response.citations ?? results?.map((entry) => entry.url)),
+      results,
     }
   },
+}
+
+function normalizePerplexityResults(results: PerplexitySearchResult[] | undefined) {
+  return results?.flatMap((entry) => {
+    if (!entry.url) {
+      return []
+    }
+
+    return [
+      {
+        title: entry.title ?? entry.url,
+        url: entry.url,
+        snippet: entry.snippet ?? "",
+        publishedDate: entry.date,
+      },
+    ]
+  })
 }
 
 function normalizeOpenRouterModel(model: string): string {

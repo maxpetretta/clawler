@@ -1,0 +1,122 @@
+---
+import "@fontsource-variable/inter/standard.css"
+import "@fontsource-variable/inter/standard-italic.css"
+import "@/styles/global.css"
+
+const title = "Better Search | Universal web search for OpenClaw"
+const description =
+  "One OpenClaw search tool, multiple providers. Better Search routes web queries across search APIs and model-native search backends behind a normalized interface."
+
+const providerGroups = [
+  {
+    label: "Search APIs",
+    items: ["Brave", "Exa", "Tavily", "Parallel"],
+  },
+  {
+    label: "Model-native search",
+    items: ["OpenAI", "Anthropic", "Perplexity", "Gemini"],
+  },
+]
+
+const principles = [
+  {
+    title: "Single tool surface",
+    body: "Expose one OpenClaw tool and keep provider choice behind config, not prompt-level branching.",
+  },
+  {
+    title: "Normalized output",
+    body: "Traditional search results and synthesized answers are shaped consistently so the agent can reason predictably.",
+  },
+  {
+    title: "No core patches",
+    body: "The plugin is designed to ship without changes to OpenClaw core by denying the built-in web_search path.",
+  },
+]
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#111827" />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site ?? "https://better-search.sh")} />
+  </head>
+
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">OpenClaw plugin workspace</p>
+          <h1>One search tool. Any backend.</h1>
+          <p class="lede">
+            Better Search is a Bun workspace for an OpenClaw plugin, a Clack-powered CLI, a ClawHub skill, and an Astro site.
+            The goal is simple: make web search swappable without teaching the model a new interface every time.
+          </p>
+          <div class="hero-actions">
+            <a href="https://github.com/maxpetretta/better-search" class="button primary">Repository</a>
+            <a href="https://github.com/maxpetretta/better-search/blob/main/docs/SPEC.md" class="button secondary">Read spec draft</a>
+          </div>
+        </div>
+
+        <div class="hero-panel">
+          <p class="panel-label">Normalized flow</p>
+          <pre><code>agent
+  -> better_search(query, options)
+      -> provider registry
+          -> search API or model-native search
+              -> normalized results + citations</code></pre>
+        </div>
+      </section>
+
+      <section class="grid-section">
+        <div class="section-heading">
+          <p class="eyebrow">Provider model</p>
+          <h2>Traditional search and model-native search share one interface.</h2>
+        </div>
+
+        <div class="provider-groups">
+          {
+            providerGroups.map((group) => (
+              <article class="card">
+                <p class="card-kicker">{group.label}</p>
+                <ul>
+                  {group.items.map((item) => (
+                    <li>{item}</li>
+                  ))}
+                </ul>
+              </article>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="grid-section">
+        <div class="section-heading">
+          <p class="eyebrow">Project shape</p>
+          <h2>The repository mirrors `reclaw` so product and release work can move in parallel.</h2>
+        </div>
+
+        <div class="principles">
+          {
+            principles.map((principle) => (
+              <article class="card">
+                <h3>{principle.title}</h3>
+                <p>{principle.body}</p>
+              </article>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="footer-note">
+        <p>
+          Current state: the plugin runtime is implemented, provider integrations are live, and the spec tracks the shipped
+          configuration and provider behavior.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

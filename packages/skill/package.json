@@ -1,0 +1,18 @@
+{
+  "name": "@better-search/skill",
+  "version": "0.1.0",
+  "description": "Better Search skill for OpenClaw and ClawHub",
+  "license": "MIT",
+  "repository": "https://github.com/maxpetretta/better-search",
+  "homepage": "https://github.com/maxpetretta/better-search",
+  "private": false,
+  "type": "module",
+  "files": [
+    "better-search"
+  ],
+  "clawhub": {
+    "skill": {
+      "entry": "better-search/SKILL.md"
+    }
+  }
+}

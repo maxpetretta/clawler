@@ -1,0 +1,233 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: "Inter Variable", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-panel: var(--panel);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+}
+
+:root {
+  --background: #f4efe5;
+  --foreground: #1b2430;
+  --muted: #5a6472;
+  --panel: rgba(255, 252, 247, 0.82);
+  --border: rgba(27, 36, 48, 0.12);
+  --accent: #c4492d;
+  --accent-soft: rgba(196, 73, 45, 0.14);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100vh;
+    margin: 0;
+    color: var(--foreground);
+    background:
+      radial-gradient(circle at top left, rgba(234, 179, 8, 0.22), transparent 28%),
+      radial-gradient(circle at 85% 20%, rgba(14, 165, 233, 0.18), transparent 32%),
+      linear-gradient(180deg, #f7f1e7 0%, #efe8dd 100%);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::selection {
+    background: rgba(196, 73, 45, 0.22);
+  }
+}
+
+.shell {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 1.5rem;
+  min-height: 88svh;
+  align-items: center;
+}
+
+.hero-copy,
+.hero-panel,
+.card,
+.footer-note {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 24px 80px rgba(27, 36, 48, 0.08);
+}
+
+.hero-copy {
+  border-radius: 2rem;
+  padding: 2.5rem;
+}
+
+.hero-panel {
+  border-radius: 1.75rem;
+  padding: 1.25rem;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.eyebrow,
+.panel-label,
+.card-kicker {
+  margin: 0 0 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+h1,
+h2,
+h3,
+p,
+ul {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(3rem, 6vw, 5.75rem);
+  line-height: 0.96;
+  letter-spacing: -0.05em;
+  max-width: 10ch;
+}
+
+.lede {
+  margin-top: 1.25rem;
+  max-width: 60ch;
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--muted);
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.85rem;
+  margin-top: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button.primary {
+  color: white;
+  background: linear-gradient(135deg, #d05c36, #a83232);
+}
+
+.button.secondary {
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.46);
+}
+
+pre {
+  margin: 0;
+  overflow-x: auto;
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.94));
+  color: #e5eefb;
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.grid-section {
+  margin-top: 2rem;
+}
+
+.section-heading {
+  margin-bottom: 1rem;
+}
+
+h2 {
+  max-width: 18ch;
+  font-size: clamp(1.75rem, 3vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.provider-groups,
+.principles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  border-radius: 1.5rem;
+  padding: 1.4rem;
+}
+
+.card h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.6rem;
+}
+
+.card p,
+.card li {
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.card ul {
+  padding-left: 1.1rem;
+}
+
+.footer-note {
+  border-radius: 1.5rem;
+  padding: 1.2rem 1.4rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 900px) {
+  .hero,
+  .provider-groups,
+  .principles {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    min-height: auto;
+    padding-top: 3rem;
+  }
+
+  .hero-copy {
+    padding: 2rem;
+  }
+}

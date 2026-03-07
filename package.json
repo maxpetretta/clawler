@@ -1,0 +1,19 @@
+{
+  "name": "better-search-workspace",
+  "private": true,
+  "workspaces": ["packages/plugin", "packages/skill", "packages/website"],
+  "scripts": {
+    "smoke": "./scripts/run-plugin-smoke-tests.sh",
+    "web": "bun run --cwd packages/website dev",
+    "web:dev": "bun run --cwd packages/website dev",
+    "web:build": "bun run --cwd packages/website build",
+    "web:preview": "bun run --cwd packages/website preview",
+    "lint": "bun run --cwd packages/website lint",
+    "fix": "bun run --cwd packages/website fix",
+    "release:preflight": "./scripts/release-preflight.sh"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.3",
+    "@typescript/native-preview": "7.0.0-dev.20260219.1"
+  }
+}

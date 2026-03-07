@@ -1,0 +1,38 @@
+{
+  "name": "better-search",
+  "version": "0.1.0",
+  "description": "Universal web search plugin for OpenClaw",
+  "license": "MIT",
+  "repository": "https://github.com/maxpetretta/better-search",
+  "homepage": "https://github.com/maxpetretta/better-search",
+  "keywords": [
+    "openclaw",
+    "search",
+    "plugin",
+    "web-search",
+    "better-search"
+  ],
+  "type": "module",
+  "main": "src/plugin.ts",
+  "files": [
+    "src",
+    "!src/__tests__",
+    "prompts",
+    "skills",
+    "openclaw.plugin.json"
+  ],
+  "openclaw": {
+    "extensions": [
+      "./src/plugin.ts"
+    ]
+  },
+  "peerDependencies": {
+    "openclaw": "*"
+  },
+  "dependencies": {
+    "@clack/prompts": "1.0.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

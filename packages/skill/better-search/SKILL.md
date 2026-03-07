@@ -13,21 +13,21 @@ Better Search is the canonical web-search surface for this project. Prefer it ov
 
 ## Setup
 
-1. Install the local plugin:
-   - `openclaw plugins install -l /Users/max/dev/better-search/packages/plugin`
-2. Run the setup wizard:
-   - `openclaw better-search setup`
-3. During setup:
-   - choose a default provider
-   - optionally save that provider's API key into OpenClaw config
-   - allow the wizard to add `web_search` to `tools.deny`
-4. Verify the installation:
-   - `openclaw better-search status`
-   - `openclaw plugins info better-search`
+If Better Search is available in the current OpenClaw environment:
 
-The setup flow installs both:
-- the Better Search plugin config in `~/.openclaw/openclaw.json`
-- the Better Search skill into OpenClaw's managed `skills/better-search` directory
+1. Run the setup flow if the plugin CLI is available:
+   - `openclaw better-search setup`
+2. Choose a default provider and configure credentials.
+3. Allow the setup flow to deny the built-in `web_search` tool when you want Better Search to be the canonical search surface.
+4. Verify availability:
+   - `openclaw better-search status`
+
+If the setup CLI is not available, make sure OpenClaw is configured so:
+
+- the Better Search plugin is installed and enabled
+- a default provider is selected
+- the provider API key is available through plugin config or environment variables
+- `tools.deny` includes `web_search` when you want to force use of `better_search`
 
 ## Tool
 

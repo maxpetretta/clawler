@@ -5,7 +5,7 @@ import "@/styles/global.css"
 
 const title = "Better Search | Upgrade your agent's web search"
 const description =
-  "Eight search providers, one tool. Give your OpenClaw agent access to the best search backends available without changing a single prompt."
+  "Give your OpenClaw agent access to the best search providers available — without changing a single prompt."
 
 const providers = [
   {
@@ -98,10 +98,10 @@ const configCode = highlight(`{
 
       <!-- ===== Hero ===== -->
       <section class="hero">
-        <h1>Eight search engines.<br /><em>One tool.</em></h1>
+        <h1>Every search engine.<br /><em>One tool.</em></h1>
         <p class="hero-sub">
           Your OpenClaw agent gets one built-in search. Better Search replaces it
-          with access to eight specialized providers&mdash;from fast link retrieval
+          with access to the best providers available&mdash;from fast link retrieval
           to AI-powered answers&mdash;without changing a single prompt.
         </p>
         <div class="hero-actions">
@@ -131,7 +131,7 @@ const configCode = highlight(`{
           <p>
             Sometimes your agent needs a quick list of links. Sometimes it needs a
             careful, cited answer. Different providers are better at different things.
-            Better Search picks the right one automatically&mdash;or lets you choose.
+            Better Search picks the right one&mdash;or lets you choose.
           </p>
         </div>
 
@@ -139,38 +139,38 @@ const configCode = highlight(`{
           <div class="compare-card compare-before">
             <div class="compare-label">Built-in search</div>
             <div class="compare-body">
-              <p class="compare-query">&#x1F50E;&#xFE0E; &ldquo;OpenAI web search API pricing&rdquo;</p>
+              <p class="compare-query">&ldquo;best carry-on luggage for Europe trip&rdquo;</p>
               <div class="compare-result">
-                <span class="compare-result-title">OpenAI Pricing</span>
-                <span class="compare-result-url">openai.com/pricing</span>
-                <span class="compare-result-snippet">Explore pricing for the OpenAI API platform including language models, image generation...</span>
+                <span class="compare-result-title">10 Best Carry-On Bags for 2026 - Travel + Leisure</span>
+                <span class="compare-result-url">travelandleisure.com/best-carry-on-luggage</span>
+                <span class="compare-result-snippet">We tested dozens of carry-on bags to find the best options for every type of traveler...</span>
               </div>
               <div class="compare-result">
-                <span class="compare-result-title">API Reference - OpenAI</span>
-                <span class="compare-result-url">platform.openai.com/docs</span>
-                <span class="compare-result-snippet">The OpenAI API can be applied to virtually any task that requires...</span>
+                <span class="compare-result-title">Carry-On Size Guide by Airline - NerdWallet</span>
+                <span class="compare-result-url">nerdwallet.com/article/travel/carry-on-size</span>
+                <span class="compare-result-snippet">Most airlines allow bags up to 22 x 14 x 9 inches, but budget carriers in Europe...</span>
               </div>
               <div class="compare-result last">
-                <span class="compare-result-title">Web Search - OpenAI API</span>
-                <span class="compare-result-url">platform.openai.com/docs/guides/web-search</span>
-                <span class="compare-result-snippet">Learn how to use the web search tool with the Responses API...</span>
+                <span class="compare-result-title">r/onebag - Best luggage for 2 weeks in Europe?</span>
+                <span class="compare-result-url">reddit.com/r/onebag/comments/...</span>
+                <span class="compare-result-snippet">I'd recommend the Osprey Farpoint 40 or the Peak Design Travel Backpack if you want...</span>
               </div>
-              <p class="compare-verdict">Just links. The agent has to read each page to find the answer.</p>
+              <p class="compare-verdict">Just links. The agent has to read each page to piece together an answer.</p>
             </div>
           </div>
 
           <div class="compare-card compare-after">
-            <div class="compare-label">Better Search <span class="compare-provider-pill">via openai</span></div>
+            <div class="compare-label">Better Search <span class="compare-provider-pill">via perplexity</span></div>
             <div class="compare-body">
-              <p class="compare-query">&#x1F50E;&#xFE0E; &ldquo;OpenAI web search API pricing&rdquo;</p>
+              <p class="compare-query">&ldquo;best carry-on luggage for Europe trip&rdquo;</p>
               <div class="compare-answer">
                 <span class="compare-answer-label">Answer</span>
-                <p>The web search tool is available through the Responses API. Pricing is per-search: $30 per 1,000 searches for gpt-4o, $25 per 1,000 for gpt-4o-mini. Search context tokens are billed at standard input rates.</p>
+                <p>For Europe, you want a bag that fits budget airline limits (typically 55 x 40 x 20 cm). Top picks for 2026: the <strong>Away Carry-On</strong> for hard-shell durability, the <strong>Peak Design Travel Backpack</strong> for flexibility, and the <strong>Osprey Farpoint 40</strong> for longer trips. Avoid anything over 22 inches&mdash;Ryanair and EasyJet will charge you.</p>
               </div>
               <div class="compare-sources">
                 <span class="compare-sources-label">Sources</span>
-                <span>platform.openai.com/docs/guides/web-search</span>
-                <span>openai.com/pricing</span>
+                <span>travelandleisure.com/best-carry-on-luggage</span>
+                <span>nerdwallet.com/article/travel/carry-on-size</span>
               </div>
               <p class="compare-verdict good">A direct answer with citations. The agent can keep moving.</p>
             </div>
@@ -204,37 +204,39 @@ const configCode = highlight(`{
 
       <!-- ===== Setup ===== -->
       <section class="section" id="setup">
-        <div class="section-intro">
-          <h2>Three steps. That's it.</h2>
-          <p>
-            The setup wizard detects which API keys you have, picks a default provider,
-            and configures everything. Your agent starts using Better Search immediately.
-          </p>
-        </div>
-
-        <div class="setup-steps">
-          <div class="setup-step">
-            <div class="setup-step-num">1</div>
-            <div class="setup-step-body">
-              <h3>Install the plugin</h3>
-              <div class="setup-cmd">openclaw plugin add better-search</div>
-            </div>
+        <div class="setup-layout">
+          <div class="setup-intro">
+            <h2>Three steps.<br />That's it.</h2>
+            <p>
+              The setup wizard detects which API keys you have, picks a default provider,
+              and configures everything. Your agent starts using Better Search immediately.
+            </p>
           </div>
 
-          <div class="setup-step">
-            <div class="setup-step-num">2</div>
-            <div class="setup-step-body">
-              <h3>Run the setup wizard</h3>
-              <div class="setup-cmd">openclaw better-search setup</div>
-              <p>Finds your API keys, asks which provider you want as the default, and writes the config file.</p>
+          <div class="setup-steps">
+            <div class="setup-step">
+              <div class="setup-step-num">1</div>
+              <div class="setup-step-body">
+                <h3>Install the plugin</h3>
+                <div class="setup-cmd">openclaw plugin add better-search</div>
+              </div>
             </div>
-          </div>
 
-          <div class="setup-step">
-            <div class="setup-step-num">3</div>
-            <div class="setup-step-body">
-              <h3>Search</h3>
-              <p>Your agent now uses <code>better_search</code> instead of the built-in tool. If your default provider is down, it falls back to the next one automatically.</p>
+            <div class="setup-step">
+              <div class="setup-step-num">2</div>
+              <div class="setup-step-body">
+                <h3>Run the setup wizard</h3>
+                <div class="setup-cmd">openclaw better-search setup</div>
+                <p>Finds your API keys, asks which provider you want as the default, and writes the config file.</p>
+              </div>
+            </div>
+
+            <div class="setup-step">
+              <div class="setup-step-num">3</div>
+              <div class="setup-step-body">
+                <h3>Search</h3>
+                <p>Your agent now uses <code>better_search</code> instead of the built-in tool. If your default provider is down, it falls back to the next one automatically.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -283,8 +285,9 @@ const configCode = highlight(`{
       </section>
 
       <footer class="footer">
-        <span>Better Search &middot; v0.1.0</span>
+        <span>Built with &#x1F99E; by <a href="https://x.com/maxpetretta">Max Petretta</a></span>
         <div class="footer-links">
+          <a href="https://www.npmjs.com/package/better-search">npm</a>
           <a href="https://github.com/maxpetretta/better-search">GitHub</a>
         </div>
       </footer>

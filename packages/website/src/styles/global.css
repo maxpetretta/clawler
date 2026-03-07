@@ -269,7 +269,7 @@ body::before {
 }
 
 .why-header {
-  max-width: 560px;
+  max-width: 680px;
   margin-bottom: 3rem;
 }
 
@@ -501,11 +501,31 @@ body::before {
 /* Setup steps                                        */
 /* -------------------------------------------------- */
 
+.setup-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+.setup-intro h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.setup-intro p {
+  margin-top: 1rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #a8a29e;
+}
+
 .setup-steps {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  max-width: 580px;
 }
 
 .setup-step {
@@ -729,6 +749,8 @@ body::before {
   .compare { grid-template-columns: 1fr; }
 
   .provider-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .setup-layout { grid-template-columns: 1fr; gap: 2rem; }
 
   .hood-grid { grid-template-columns: 1fr; }
 

@@ -5,7 +5,7 @@ import tailwindcss from "@tailwindcss/vite"
 import { defineConfig } from "astro/config"
 
 export default defineConfig({
-  site: "https://better-search.sh",
+  site: "https://clawler.dev",
   integrations: [sitemap()],
   vite: {
     plugins: [tailwindcss()],

@@ -3,9 +3,9 @@ import "@fontsource-variable/inter/standard.css"
 import "@fontsource-variable/inter/standard-italic.css"
 import "@/styles/global.css"
 
-const title = "Better Search | Upgrade your agent's web search"
+const title = "Clawler | Every search engine. One claw."
 const description =
-  "Give your OpenClaw agent access to the best search providers available — without changing a single prompt."
+  "OpenClaw plugin that reaches across eight search providers — Brave, Exa, Tavily, OpenAI, Anthropic, Perplexity, Gemini, and Parallel — with a single tool."
 
 const providers = [
   {
@@ -42,7 +42,7 @@ const providers = [
   },
 ]
 
-const installCmd = "openclaw plugin add better-search"
+const installCmd = "openclaw plugin add clawler"
 
 function highlight(code: string) {
   let html = code
@@ -59,7 +59,7 @@ function highlight(code: string) {
 }
 
 const configCode = highlight(`{
-  "better-search": {
+  "clawler": {
     "provider": "auto",
     "fallback": ["perplexity", "brave"]
   }
@@ -74,7 +74,7 @@ const configCode = highlight(`{
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content="#08080a" />
-    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site ?? "https://better-search.sh")} />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site ?? "https://clawler.dev")} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
@@ -87,22 +87,75 @@ const configCode = highlight(`{
       <nav class="nav">
         <div class="nav-brand">
           <span class="nav-dot" aria-hidden="true"></span>
-          Better Search
+          Clawler
         </div>
         <div class="nav-links">
           <a href="#providers">Providers</a>
           <a href="#setup">Setup</a>
-          <a href="https://github.com/maxpetretta/better-search">GitHub</a>
+          <a href="https://github.com/maxpetretta/clawler">GitHub</a>
         </div>
       </nav>
 
       <!-- ===== Hero ===== -->
       <section class="hero">
-        <h1>Every search engine.<br /><em>One tool.</em></h1>
+        <div class="hero-drift" aria-hidden="true">
+          <span>best practices for API design</span>
+          <span>how do transformers work</span>
+          <span>climate change research 2026</span>
+          <span>latest WWDC announcements</span>
+          <span>what is retrieval augmented generation</span>
+          <span>EU AI Act compliance guide</span>
+          <span>best noise cancelling headphones</span>
+          <span>how to deploy to cloudflare workers</span>
+          <span>rust vs go for backend services</span>
+          <span>when is the next solar eclipse</span>
+          <span>postgres jsonb query performance</span>
+          <span>how does mTLS work</span>
+          <span>best espresso machines under $500</span>
+          <span>flights from SFO to NRT</span>
+          <span>what is the CAP theorem</span>
+          <span>how to negotiate a raise</span>
+          <span>history of the internet</span>
+          <span>why is the sky blue</span>
+          <span>best carry-on luggage for Europe</span>
+          <span>how to make sourdough starter</span>
+          <span>difference between TCP and UDP</span>
+          <span>top rated sci-fi books 2026</span>
+          <span>how does CRISPR gene editing work</span>
+          <span>cheapest flights to Tokyo in April</span>
+          <span>react server components explained</span>
+          <span>what causes aurora borealis</span>
+          <span>best standing desks for small spaces</span>
+          <span>how to read a profit and loss statement</span>
+          <span>is pluto a planet</span>
+          <span class="drift-egg">openclaw acquired by openai</span>
+          <span>kubernetes vs docker swarm</span>
+          <span>how long does it take to learn piano</span>
+          <span>best hiking trails near Portland</span>
+          <span>what is quantum computing used for</span>
+          <span>average cost of a wedding in 2026</span>
+          <span>how to fix a leaky faucet</span>
+          <span>latest breakthroughs in fusion energy</span>
+          <span>how to train for a half marathon</span>
+          <span>best budget mirrorless cameras</span>
+          <span>what happened at CES 2026</span>
+          <span>how does DNS resolution work</span>
+          <span>best restaurants in Lisbon</span>
+          <span>sqlite vs postgres for side projects</span>
+          <span>how to compost in an apartment</span>
+          <span>who invented the printing press</span>
+          <span>best VPN for streaming</span>
+          <span>how do black holes form</span>
+          <span>mechanical keyboard switch comparison</span>
+          <span>is intermittent fasting safe</span>
+          <span>how to write a good cover letter</span>
+          <span>mars rover latest discoveries</span>
+        </div>
+        <h1>Crawl the web.<br /><em>Fast.</em></h1>
         <p class="hero-sub">
-          Your OpenClaw agent gets one built-in search. Better Search replaces it
-          with access to the best providers available&mdash;from fast link retrieval
-          to AI-powered answers&mdash;without changing a single prompt.
+          Your OpenClaw agent gets one built-in search engine. Clawler gives it
+          eight&mdash;from fast link retrieval to AI-powered answers&mdash;without
+          changing a single prompt.
         </p>
         <div class="hero-actions">
           <div class="install-block">
@@ -117,7 +170,7 @@ const configCode = highlight(`{
               </svg>
             </button>
           </div>
-          <a href="https://github.com/maxpetretta/better-search" class="btn btn-ghost">
+          <a href="https://github.com/maxpetretta/clawler" class="btn btn-ghost">
             GitHub
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 13L13 3M13 3H5M13 3v8" /></svg>
           </a>
@@ -125,13 +178,13 @@ const configCode = highlight(`{
       </section>
 
       <!-- ===== Why ===== -->
-      <section class="why">
+      <section class="why reveal">
         <div class="why-header">
           <h2>Not all searches are the same</h2>
           <p>
             Sometimes your agent needs a quick list of links. Sometimes it needs a
             careful, cited answer. Different providers are better at different things.
-            Better Search picks the right one&mdash;or lets you choose.
+            Clawler picks the right one&mdash;or lets you choose.
           </p>
         </div>
 
@@ -160,7 +213,7 @@ const configCode = highlight(`{
           </div>
 
           <div class="compare-card compare-after">
-            <div class="compare-label">Better Search <span class="compare-provider-pill">via perplexity</span></div>
+            <div class="compare-label">Clawler <span class="compare-provider-pill">via perplexity</span></div>
             <div class="compare-body">
               <p class="compare-query">&ldquo;best carry-on luggage for Europe trip&rdquo;</p>
               <div class="compare-answer">
@@ -179,12 +232,12 @@ const configCode = highlight(`{
       </section>
 
       <!-- ===== Providers ===== -->
-      <section class="section" id="providers">
+      <section class="section reveal" id="providers">
         <div class="section-intro">
           <h2>Choose your providers</h2>
           <p>
             Each provider has different strengths. Install the plugin, add whichever
-            API keys you have, and Better Search figures out the rest. You can
+            API keys you have, and Clawler figures out the rest. You can
             also pin a specific provider for any individual search.
           </p>
         </div>
@@ -203,13 +256,13 @@ const configCode = highlight(`{
       </section>
 
       <!-- ===== Setup ===== -->
-      <section class="section" id="setup">
+      <section class="section reveal" id="setup">
         <div class="setup-layout">
           <div class="setup-intro">
             <h2>Three steps.<br />That's it.</h2>
             <p>
               The setup wizard detects which API keys you have, picks a default provider,
-              and configures everything. Your agent starts using Better Search immediately.
+              and configures everything. Your agent starts using Clawler immediately.
             </p>
           </div>
 
@@ -218,7 +271,7 @@ const configCode = highlight(`{
               <div class="setup-step-num">1</div>
               <div class="setup-step-body">
                 <h3>Install the plugin</h3>
-                <div class="setup-cmd">openclaw plugin add better-search</div>
+                <div class="setup-cmd">openclaw plugin add clawler</div>
               </div>
             </div>
 
@@ -226,7 +279,7 @@ const configCode = highlight(`{
               <div class="setup-step-num">2</div>
               <div class="setup-step-body">
                 <h3>Run the setup wizard</h3>
-                <div class="setup-cmd">openclaw better-search setup</div>
+                <div class="setup-cmd">openclaw clawler setup</div>
                 <p>Finds your API keys, asks which provider you want as the default, and writes the config file.</p>
               </div>
             </div>
@@ -235,7 +288,7 @@ const configCode = highlight(`{
               <div class="setup-step-num">3</div>
               <div class="setup-step-body">
                 <h3>Search</h3>
-                <p>Your agent now uses <code>better_search</code> instead of the built-in tool. If your default provider is down, it falls back to the next one automatically.</p>
+                <p>Your agent now uses <code>clawler</code> instead of the built-in search tool. If your default provider is down, it falls back to the next one automatically.</p>
               </div>
             </div>
           </div>
@@ -243,7 +296,7 @@ const configCode = highlight(`{
       </section>
 
       <!-- ===== Under the hood ===== -->
-      <section class="hood" id="config">
+      <section class="hood reveal" id="config">
         <details class="hood-details">
           <summary class="hood-summary">
             <span>Under the hood</span>
@@ -252,7 +305,7 @@ const configCode = highlight(`{
           <div class="hood-content">
             <div class="hood-grid">
               <div class="hood-text">
-                <h3>How Better Search decides where to send your query</h3>
+                <h3>How Clawler decides where to send your query</h3>
                 <ol>
                   <li>If the search call specifies a provider, use that one directly.</li>
                   <li>Otherwise, use your configured default.</li>
@@ -263,7 +316,7 @@ const configCode = highlight(`{
                 <p>
                   Traditional search providers (Brave, Exa, Parallel) return a list of links with snippets.
                   AI-powered providers (OpenAI, Anthropic, Perplexity, Gemini) return a written answer with citations.
-                  Tavily does both. Better Search normalizes all of these into one format.
+                  Tavily does both. Clawler normalizes all of these into one format.
                 </p>
               </div>
               <div class="hood-code">
@@ -287,8 +340,8 @@ const configCode = highlight(`{
       <footer class="footer">
         <span>Built with &#x1F99E; by <a href="https://x.com/maxpetretta">Max Petretta</a></span>
         <div class="footer-links">
-          <a href="https://www.npmjs.com/package/better-search">npm</a>
-          <a href="https://github.com/maxpetretta/better-search">GitHub</a>
+          <a href="https://www.npmjs.com/package/clawler">npm</a>
+          <a href="https://github.com/maxpetretta/clawler">GitHub</a>
         </div>
       </footer>
     </div>
@@ -312,6 +365,19 @@ const configCode = highlight(`{
           })
         })
       }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("revealed")
+              observer.unobserve(entry.target)
+            }
+          })
+        },
+        { threshold: 0.15 },
+      )
+      document.querySelectorAll(".reveal").forEach((el) => observer.observe(el))
     </script>
   </body>
 </html>

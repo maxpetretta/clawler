@@ -1,7 +1,7 @@
 import { cancel, confirm, intro, isCancel, note, outro, password, select } from "@clack/prompts"
 import type { BetterSearchConfig, BetterSearchProviderSelection } from "../config"
 import { listProviderStatuses } from "../providers/registry"
-import { defaultPluginPath, persistSetupToOpenClawConfig } from "./openclaw-config"
+import { defaultPluginPath, installOpenClawSkill, persistSetupToOpenClawConfig } from "./openclaw-config"
 
 type SetupWizardPromptApi = {
   cancel: typeof cancel
@@ -18,6 +18,7 @@ type SetupWizardDeps = {
   prompts: SetupWizardPromptApi
   listProviderStatuses: typeof listProviderStatuses
   persistSetupToOpenClawConfig: typeof persistSetupToOpenClawConfig
+  installOpenClawSkill: typeof installOpenClawSkill
   defaultPluginPath: typeof defaultPluginPath
 }
 
@@ -34,6 +35,7 @@ const defaultSetupWizardDeps: SetupWizardDeps = {
   },
   listProviderStatuses,
   persistSetupToOpenClawConfig,
+  installOpenClawSkill,
   defaultPluginPath,
 }
 
@@ -106,10 +108,29 @@ export async function runSetupWizard(
     providerApiKey,
   })
 
+  let installedSkillPath = ""
+  let skillInstallError = ""
+
+  try {
+    const skillInstall = await deps.installOpenClawSkill({ configPath })
+    installedSkillPath = skillInstall.installedPath
+  } catch (error) {
+    skillInstallError = `Failed to install Better Search skill: ${String(error)}`
+  }
+
   deps.prompts.note(
-    [`config: ${configPath}`, `plugin path: ${deps.defaultPluginPath()}`, `provider: ${selectedProvider}`].join("\n"),
+    [
+      `config: ${configPath}`,
+      `plugin path: ${deps.defaultPluginPath()}`,
+      `provider: ${selectedProvider}`,
+      installedSkillPath ? `skill path: ${installedSkillPath}` : "skill path: install failed",
+    ].join("\n"),
     "Persisted config",
   )
+
+  if (skillInstallError) {
+    deps.prompts.note(skillInstallError, "Skill install warning")
+  }
 
   deps.prompts.outro(`Saved Better Search setup to ${configPath}`)
 }

@@ -493,13 +493,14 @@ Currently implemented:
 Current behavior:
 
 - `status` shows provider availability and credential source
-- `setup` lets the user choose a default provider, shows detected providers, optionally captures a provider API key, and writes the result into `~/.openclaw/openclaw.json`
+- `setup` lets the user choose a default provider, shows detected providers, optionally captures a provider API key, writes the result into `~/.openclaw/openclaw.json`, and installs the bundled Better Search skill into OpenClaw's managed `skills/better-search` directory
 - `setup` ensures:
   - `plugins.allow` contains `better-search`
   - `plugins.load.paths` contains the current plugin path
   - `plugins.entries["better-search"].enabled = true`
   - `plugins.entries["better-search"].config.provider` is set
   - `tools.deny` includes `web_search` when requested
+  - the standalone skill package is copied into the OpenClaw state directory under `skills/better-search`
 
 ## 11. Validation
 

@@ -1,9 +1,11 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises"
+import { cp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import type { BetterSearchProviderSelection } from "../config"
 
 type OpenClawJson = Record<string, unknown>
+export const OPENCLAW_SKILLS_DIRNAME = "skills"
+export const BETTER_SEARCH_SKILL_SLUG = "better-search"
 
 export type SetupPersistenceInput = {
   provider: BetterSearchProviderSelection
@@ -13,6 +15,11 @@ export type SetupPersistenceInput = {
 }
 
 export function defaultOpenClawConfigPath(homeDir = process.env.HOME): string {
+  const explicitConfigPath = process.env.OPENCLAW_CONFIG_PATH
+  if (explicitConfigPath && explicitConfigPath.length > 0) {
+    return explicitConfigPath
+  }
+
   if (!homeDir || homeDir.length === 0) {
     throw new Error("HOME is not set, so the OpenClaw config path could not be determined.")
   }
@@ -22,6 +29,23 @@ export function defaultOpenClawConfigPath(homeDir = process.env.HOME): string {
 
 export function defaultPluginPath(): string {
   return fileURLToPath(new URL("../..", import.meta.url))
+}
+
+export function defaultOpenClawStateDir(homeDir = process.env.HOME): string {
+  const explicitStateDir = process.env.OPENCLAW_STATE_DIR
+  if (explicitStateDir && explicitStateDir.length > 0) {
+    return explicitStateDir
+  }
+
+  return dirname(defaultOpenClawConfigPath(homeDir))
+}
+
+export function defaultSkillPackagePath(): string {
+  return fileURLToPath(new URL("../../../skill/better-search", import.meta.url))
+}
+
+export function resolveOpenClawSkillInstallPath(stateDir = defaultOpenClawStateDir()): string {
+  return join(stateDir, OPENCLAW_SKILLS_DIRNAME, BETTER_SEARCH_SKILL_SLUG)
 }
 
 export function applySetupToOpenClawConfig(
@@ -79,6 +103,33 @@ export async function persistSetupToOpenClawConfig(
   await writeFile(tempPath, `${JSON.stringify(next, null, 2)}\n`, "utf8")
   await rename(tempPath, configPath)
   return configPath
+}
+
+export type InstallOpenClawSkillInput = {
+  configPath?: string
+  skillSourcePath?: string
+}
+
+export type InstallOpenClawSkillResult = {
+  installedPath: string
+  sourcePath: string
+}
+
+export async function installOpenClawSkill({
+  configPath = defaultOpenClawConfigPath(),
+  skillSourcePath = defaultSkillPackagePath(),
+}: InstallOpenClawSkillInput = {}): Promise<InstallOpenClawSkillResult> {
+  const stateDir = dirname(configPath)
+  const installedPath = resolveOpenClawSkillInstallPath(stateDir)
+
+  await mkdir(join(stateDir, OPENCLAW_SKILLS_DIRNAME), { recursive: true })
+  await rm(installedPath, { recursive: true, force: true })
+  await cp(skillSourcePath, installedPath, { recursive: true, force: true })
+
+  return {
+    installedPath,
+    sourcePath: skillSourcePath,
+  }
 }
 
 function ensureRecord(record: Record<string, unknown>, key: string): Record<string, unknown> {

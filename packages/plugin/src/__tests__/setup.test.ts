@@ -16,12 +16,14 @@ function createDeps() {
   const noteCalls: Array<{ title?: string; message?: string }> = []
   const outroMessages: string[] = []
   const persistCalls: Array<Record<string, unknown>> = []
+  const installSkillCalls: Array<Record<string, unknown>> = []
+  let installSkillError: Error | undefined
 
-    const deps: FakeDeps = {
-      prompts: {
-        intro() {
-          // No-op for test coverage.
-        },
+  const deps: FakeDeps = {
+    prompts: {
+      intro() {
+        // No-op for test coverage.
+      },
       outro(message?: string) {
         outroMessages.push(message ?? "")
       },
@@ -53,6 +55,17 @@ function createDeps() {
       persistCalls.push(input as Record<string, unknown>)
       return Promise.resolve("/tmp/openclaw.json")
     },
+    installOpenClawSkill(input) {
+      installSkillCalls.push((input ?? {}) as Record<string, unknown>)
+      if (installSkillError) {
+        return Promise.reject(installSkillError)
+      }
+
+      return Promise.resolve({
+        installedPath: "/tmp/skills/better-search",
+        sourcePath: "/repo/packages/skill/better-search",
+      })
+    },
     defaultPluginPath() {
       return "/plugin/path"
     },
@@ -67,6 +80,10 @@ function createDeps() {
     noteCalls,
     outroMessages,
     persistCalls,
+    installSkillCalls,
+    setInstallSkillError(error?: Error) {
+      installSkillError = error
+    },
   }
 }
 
@@ -91,7 +108,27 @@ describe("runSetupWizard", () => {
         providerApiKey: "openai-key",
       },
     ])
+    expect(state.installSkillCalls).toEqual([{ configPath: "/tmp/openclaw.json" }])
     expect(state.noteCalls.map((entry) => entry.title)).toEqual(["Detected providers", "Persisted config"])
+    expect(state.noteCalls[1]?.message).toContain("skill path: /tmp/skills/better-search")
+    expect(state.outroMessages).toEqual(["Saved Better Search setup to /tmp/openclaw.json"])
+  })
+
+  test("warns but still completes when skill installation fails", async () => {
+    state.selectValues.push("auto")
+    state.confirmValues.push(true, true)
+    state.setInstallSkillError(new Error("copy failed"))
+
+    await runSetupWizard(resolveConfig({}), state.deps)
+
+    expect(state.installSkillCalls).toEqual([{ configPath: "/tmp/openclaw.json" }])
+    expect(state.noteCalls.map((entry) => entry.title)).toEqual([
+      "Detected providers",
+      "Persisted config",
+      "Skill install warning",
+    ])
+    expect(state.noteCalls[1]?.message).toContain("skill path: install failed")
+    expect(state.noteCalls[2]?.message).toContain("copy failed")
     expect(state.outroMessages).toEqual(["Saved Better Search setup to /tmp/openclaw.json"])
   })
 

@@ -83,11 +83,13 @@ When `provider: "auto"` is configured, the plugin resolves providers in this ord
 ```text
 agent
   -> better_search(query, options)
-    -> if options.provider: use that provider (per-call override)
+    -> if options.provider: use that provider (per-call override, no fallback)
     -> else: resolve configured default or auto-detect from available keys
     -> execute provider request
-    -> normalize provider response
-    -> format response text for the agent
+      -> on success: normalize + format + return
+      -> on error + fallback configured: try next provider in fallback chain
+      -> on error + no fallback: throw
+    -> format response text for the agent (includes fallback note if applicable)
 ```
 
 ### 4.2 Result model
@@ -165,6 +167,7 @@ Some providers support them natively. Others only receive them as prompt guidanc
         enabled: true,
         config: {
           provider: "auto",
+          fallback: ["perplexity", "brave"],
           toolName: "better_search",
           maxResults: 5,
           cacheTtlMinutes: 15,
@@ -242,7 +245,56 @@ Examples:
 - `country` falls back to `searchDefaults.country`
 - `include_domains` falls back to `searchDefaults.includeDomains`
 
-### 6.3 Provider-specific config
+### 6.3 Fallback chain
+
+When the primary provider fails (timeout, rate limit, API error, missing key), the plugin can automatically retry with fallback providers.
+
+**Config:**
+
+```json5
+{
+  provider: "openai",
+  fallback: ["perplexity", "brave"],
+}
+```
+
+**Behavior:**
+
+1. Try the primary provider (`provider` config or per-call `provider` param).
+2. If it fails, try each provider in the `fallback` array in order.
+3. If all fail, throw the last error.
+4. On fallback, the result includes a note: `"(via brave, fallback from openai)"` so the agent knows which provider actually served the response.
+
+**Rules:**
+
+- `fallback` is an ordered array of provider IDs. Empty array `[]` disables fallback (fail immediately).
+- Default: `[]` (no fallback) — users opt in explicitly.
+- Only triggers on errors (timeout, HTTP 4xx/5xx, missing credentials). Does **not** trigger on empty results (that's a valid response).
+- Per-call `provider` overrides skip the fallback chain — if you explicitly request a provider, you get that provider or an error.
+- Each fallback attempt uses the same query and options as the original call.
+- Fallback attempts are not cached (only the successful final result is cached).
+- The fallback provider must be available (has credentials configured). Unavailable providers in the chain are silently skipped.
+
+**Example flows:**
+
+```
+# Config: provider=openai, fallback=[perplexity, brave]
+
+Query → openai (timeout) → perplexity (success)
+  Result: "Search results for ... (via perplexity, fallback from openai)"
+
+Query → openai (timeout) → perplexity (rate limit) → brave (success)  
+  Result: "Search results for ... (via brave, fallback from openai)"
+
+Query → openai (timeout) → perplexity (rate limit) → brave (error)
+  Error: "All providers failed: openai (timeout), perplexity (rate limit), brave (error)"
+
+# Per-call override: provider=exa (no fallback)
+Query → exa (error)
+  Error: "exa: <error message>"
+```
+
+### 6.4 Provider-specific config
 
 #### Brave
 

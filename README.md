@@ -29,4 +29,4 @@ bun run smoke
 
 ## Status
 
-The repository is currently a product scaffold plus architecture draft. The implementation target lives in [`docs/SPEC.md`](docs/SPEC.md).
+The plugin runtime is implemented and validated across all eight providers. Current behavior, config, and provider tradeoffs are documented in [`docs/SPEC.md`](docs/SPEC.md), and the latest comparison run is summarized in [`docs/BENCHMARK.md`](docs/BENCHMARK.md).

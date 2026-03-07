@@ -3,95 +3,67 @@ import "@fontsource-variable/inter/standard.css"
 import "@fontsource-variable/inter/standard-italic.css"
 import "@/styles/global.css"
 
-const title = "Better Search | Universal web search for OpenClaw"
+const title = "Better Search | Upgrade your agent's web search"
 const description =
-  "One OpenClaw tool, eight search providers. Better Search gives your agent access to the best search backends without changing how it works."
+  "Eight search providers, one tool. Give your OpenClaw agent access to the best search backends available without changing a single prompt."
 
 const providers = [
-  { id: "brave", label: "Brave", category: "search", output: "results", freshness: "Native", domains: "Query rewrite", country: "Native", color: "#fb542b" },
-  { id: "exa", label: "Exa", category: "search", output: "results", freshness: "Native", domains: "Native", country: "Prompt", color: "#5b8df9" },
-  { id: "tavily", label: "Tavily", category: "hybrid", output: "answer + results", freshness: "Native", domains: "Native", country: "Native", color: "#0bc98c" },
-  { id: "parallel", label: "Parallel", category: "search", output: "results", freshness: "Native", domains: "Native", country: "Prompt", color: "#a78bfa" },
-  { id: "openai", label: "OpenAI", category: "llm", output: "answer + citations", freshness: "Prompt", domains: "Responses API", country: "Responses API", color: "#19c37d" },
-  { id: "anthropic", label: "Anthropic", category: "llm", output: "answer + citations", freshness: "Prompt", domains: "Native", country: "Native", color: "#d4a27f" },
-  { id: "perplexity", label: "Perplexity", category: "llm", output: "answer + citations", freshness: "Native", domains: "Native", country: "Prompt", color: "#22b8cf" },
-  { id: "gemini", label: "Gemini", category: "llm", output: "answer + citations", freshness: "Prompt", domains: "Prompt", country: "Prompt", color: "#4285f4" },
+  {
+    id: "brave", label: "Brave", color: "#fb542b", type: "Fast links",
+    desc: "Private, fast web search. Great for quick factual lookups and getting a list of relevant pages.",
+  },
+  {
+    id: "exa", label: "Exa", color: "#5b8df9", type: "Smart links",
+    desc: "Neural search that understands what you mean, not just what you typed. Finds the exact page you need.",
+  },
+  {
+    id: "tavily", label: "Tavily", color: "#0bc98c", type: "Research",
+    desc: "Research-grade search that returns an answer and the sources it used. Built for thorough lookups.",
+  },
+  {
+    id: "parallel", label: "Parallel", color: "#a78bfa", type: "Fast links",
+    desc: "Searches multiple sources at once and returns structured excerpts. Fast and comprehensive.",
+  },
+  {
+    id: "openai", label: "OpenAI", color: "#19c37d", type: "AI answer",
+    desc: "Uses GPT to search the web and reason through results. Returns a full answer with cited sources.",
+  },
+  {
+    id: "anthropic", label: "Anthropic", color: "#d4a27f", type: "AI answer",
+    desc: "Claude searches the web for you. Deep research mode with citations and careful source evaluation.",
+  },
+  {
+    id: "perplexity", label: "Perplexity", color: "#22b8cf", type: "AI answer",
+    desc: "Real-time answers grounded in current web results. Great when you need up-to-the-minute information.",
+  },
+  {
+    id: "gemini", label: "Gemini", color: "#4285f4", type: "AI answer",
+    desc: "Google-powered search with AI summaries. Taps into Google's index through the Gemini API.",
+  },
 ]
 
-const orbitPositions = [
-  { top: "4%", left: "50%" },
-  { top: "17%", left: "83%" },
-  { top: "50%", left: "96%" },
-  { top: "83%", left: "83%" },
-  { top: "96%", left: "50%" },
-  { top: "83%", left: "17%" },
-  { top: "50%", left: "4%" },
-  { top: "17%", left: "17%" },
-]
+const installCmd = "openclaw plugin add better-search"
 
-const orbitLines = providers.map((p, i) => {
-  const angle = (i / 8) * Math.PI * 2 - Math.PI / 2
-  return {
-    x2: Math.round(350 + 330 * Math.cos(angle)),
-    y2: Math.round(350 + 330 * Math.sin(angle)),
-    color: p.color,
-  }
-})
-
-function tagClass(category: string) {
-  if (category === "search") return "tag tag-search"
-  if (category === "llm") return "tag tag-llm"
-  return "tag tag-hybrid"
-}
-
-// Syntax highlighting helper — produces HTML with <span> color classes
 function highlight(code: string) {
   let html = code
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-  // Comments (must run before string matching)
   html = html.replace(/(\/\/.*)/g, '<span class=hl-comment>$1</span>')
-  // JSON keys "key":
+  html = html.replace(/(\$\s.*)/g, '<span class=hl-comment>$1</span>')
   html = html.replace(/"([\w.$\-\/~*]+)"(\s*:)/g, '<span class=hl-key>"$1"</span>$2')
-  // Remaining strings "..."
   html = html.replace(/"([^"]*?)"/g, '<span class=hl-string>"$1"</span>')
-  // Booleans
   html = html.replace(/\b(true|false)\b/g, '<span class=hl-bool>$1</span>')
-  // Numbers after colons
   html = html.replace(/(:\s*)(\d+)/g, '$1<span class=hl-number>$2</span>')
   return html
 }
 
 const configCode = highlight(`{
-  "plugins": {
-    "entries": {
-      "better-search": {
-        "enabled": true,
-        "config": {
-          "provider": "auto",
-          "fallback": ["perplexity", "brave"],
-          "maxResults": 5,
-          "cacheTtlMinutes": 15
-        }
-      }
-    }
-  },
-  "tools": {
-    "deny": ["web_search"]
+  "better-search": {
+    "provider": "auto",
+    "fallback": ["perplexity", "brave"]
   }
 }`)
-
-const toolCallCode = highlight(`// Override the provider for a single query
-{
-  "query": "latest OpenAI web search docs",
-  "provider": "exa",
-  "count": 5,
-  "freshness": "pm",
-  "include_domains": ["platform.openai.com"]
-}`)
-
-const installCmd = "openclaw plugin add better-search"
 ---
 
 <!doctype html>
@@ -112,7 +84,6 @@ const installCmd = "openclaw plugin add better-search"
     <div class="grid-bg" aria-hidden="true"></div>
 
     <div class="shell">
-      <!-- Nav -->
       <nav class="nav">
         <div class="nav-brand">
           <span class="nav-dot" aria-hidden="true"></span>
@@ -120,20 +91,18 @@ const installCmd = "openclaw plugin add better-search"
         </div>
         <div class="nav-links">
           <a href="#providers">Providers</a>
-          <a href="#how-it-works">How it works</a>
-          <a href="#config">Config</a>
+          <a href="#setup">Setup</a>
           <a href="https://github.com/maxpetretta/better-search">GitHub</a>
         </div>
       </nav>
 
-      <!-- Hero -->
+      <!-- ===== Hero ===== -->
       <section class="hero">
-        <span class="hero-kicker">OpenClaw plugin</span>
-        <h1>One search.<br /><em>Every</em> backend.</h1>
+        <h1>Eight search engines.<br /><em>One tool.</em></h1>
         <p class="hero-sub">
-          Give your agent access to eight search providers&mdash;from Brave and Exa
-          to OpenAI and Anthropic&mdash;through a single tool it already knows how to use.
-          No extra setup in your prompts. Just configure once and search.
+          Your OpenClaw agent gets one built-in search. Better Search replaces it
+          with access to eight specialized providers&mdash;from fast link retrieval
+          to AI-powered answers&mdash;without changing a single prompt.
         </p>
         <div class="hero-actions">
           <div class="install-block">
@@ -155,161 +124,164 @@ const installCmd = "openclaw plugin add better-search"
         </div>
       </section>
 
-      <!-- Constellation -->
-      <section class="constellation" id="providers">
-        <p class="constellation-label">Eight providers, one interface</p>
+      <!-- ===== Why ===== -->
+      <section class="why">
+        <div class="why-header">
+          <h2>Not all searches are the same</h2>
+          <p>
+            Sometimes your agent needs a quick list of links. Sometimes it needs a
+            careful, cited answer. Different providers are better at different things.
+            Better Search picks the right one automatically&mdash;or lets you choose.
+          </p>
+        </div>
 
-        <div class="orbit-wrap">
-          <div class="orbit-ring" aria-hidden="true"></div>
-          <div class="orbit-ring-inner" aria-hidden="true"></div>
-
-          <svg class="orbit-lines" viewBox="0 0 700 700" aria-hidden="true">
-            {orbitLines.map((line, i) => (
-              <line
-                x1="350" y1="350"
-                x2={line.x2} y2={line.y2}
-                class="orbit-line"
-                style={`stroke: ${line.color}; opacity: 0.25; animation-delay: ${i * 0.25}s`}
-              />
-            ))}
-          </svg>
-
-          <div class="orbit-center">
-            <div class="orbit-center-icon" aria-hidden="true"></div>
-            <span class="orbit-center-label">Query</span>
+        <div class="compare">
+          <div class="compare-card compare-before">
+            <div class="compare-label">Built-in search</div>
+            <div class="compare-body">
+              <p class="compare-query">&#x1F50E;&#xFE0E; &ldquo;OpenAI web search API pricing&rdquo;</p>
+              <div class="compare-result">
+                <span class="compare-result-title">OpenAI Pricing</span>
+                <span class="compare-result-url">openai.com/pricing</span>
+                <span class="compare-result-snippet">Explore pricing for the OpenAI API platform including language models, image generation...</span>
+              </div>
+              <div class="compare-result">
+                <span class="compare-result-title">API Reference - OpenAI</span>
+                <span class="compare-result-url">platform.openai.com/docs</span>
+                <span class="compare-result-snippet">The OpenAI API can be applied to virtually any task that requires...</span>
+              </div>
+              <div class="compare-result last">
+                <span class="compare-result-title">Web Search - OpenAI API</span>
+                <span class="compare-result-url">platform.openai.com/docs/guides/web-search</span>
+                <span class="compare-result-snippet">Learn how to use the web search tool with the Responses API...</span>
+              </div>
+              <p class="compare-verdict">Just links. The agent has to read each page to find the answer.</p>
+            </div>
           </div>
 
-          {providers.map((provider, i) => (
-            <div
-              class="orbit-node"
-              style={`top: ${orbitPositions[i].top}; left: ${orbitPositions[i].left}; --node-color: ${provider.color};`}
-            >
-              <div class="orbit-node-dot">
-                {provider.id.slice(0, 2).toUpperCase()}
+          <div class="compare-card compare-after">
+            <div class="compare-label">Better Search <span class="compare-provider-pill">via openai</span></div>
+            <div class="compare-body">
+              <p class="compare-query">&#x1F50E;&#xFE0E; &ldquo;OpenAI web search API pricing&rdquo;</p>
+              <div class="compare-answer">
+                <span class="compare-answer-label">Answer</span>
+                <p>The web search tool is available through the Responses API. Pricing is per-search: $30 per 1,000 searches for gpt-4o, $25 per 1,000 for gpt-4o-mini. Search context tokens are billed at standard input rates.</p>
               </div>
-              <span class="orbit-node-label">{provider.label}</span>
-              <span class="orbit-node-tag">{provider.category}</span>
+              <div class="compare-sources">
+                <span class="compare-sources-label">Sources</span>
+                <span>platform.openai.com/docs/guides/web-search</span>
+                <span>openai.com/pricing</span>
+              </div>
+              <p class="compare-verdict good">A direct answer with citations. The agent can keep moving.</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Providers ===== -->
+      <section class="section" id="providers">
+        <div class="section-intro">
+          <h2>Choose your providers</h2>
+          <p>
+            Each provider has different strengths. Install the plugin, add whichever
+            API keys you have, and Better Search figures out the rest. You can
+            also pin a specific provider for any individual search.
+          </p>
+        </div>
+
+        <div class="provider-grid">
+          {providers.map((p) => (
+            <article class="provider-card" style={`--card-color: ${p.color};`}>
+              <div class="provider-card-head">
+                <span class="provider-card-name">{p.label}</span>
+                <span class="provider-card-type">{p.type}</span>
+              </div>
+              <p class="provider-card-desc">{p.desc}</p>
+            </article>
           ))}
         </div>
       </section>
 
-      <!-- How it works -->
-      <section class="section" id="how-it-works">
+      <!-- ===== Setup ===== -->
+      <section class="section" id="setup">
         <div class="section-intro">
-          <h2 class="section-title">How it works</h2>
-          <p class="section-desc">
-            Better Search sits between your agent and the search providers you already
-            have API keys for. It picks the best available backend, runs the search, and
-            returns a consistent result&mdash;whether that's a list of links or a full
-            answer with citations.
+          <h2>Three steps. That's it.</h2>
+          <p>
+            The setup wizard detects which API keys you have, picks a default provider,
+            and configures everything. Your agent starts using Better Search immediately.
           </p>
         </div>
 
-        <div class="steps">
-          <div class="step">
-            <div class="step-number">1</div>
-            <div class="step-content">
-              <h3>Configure your providers</h3>
-              <p>Add your API keys and pick a default. Better Search auto-detects which providers are available, or you can set an explicit preference and fallback order.</p>
+        <div class="setup-steps">
+          <div class="setup-step">
+            <div class="setup-step-num">1</div>
+            <div class="setup-step-body">
+              <h3>Install the plugin</h3>
+              <div class="setup-cmd">openclaw plugin add better-search</div>
             </div>
           </div>
-          <div class="step-line" aria-hidden="true"></div>
-          <div class="step">
-            <div class="step-number">2</div>
-            <div class="step-content">
-              <h3>Your agent searches normally</h3>
-              <p>The agent calls one tool&mdash;<code>better_search</code>&mdash;with a query. It never needs to know which provider runs behind the scenes. No prompt changes, no branching logic.</p>
+
+          <div class="setup-step">
+            <div class="setup-step-num">2</div>
+            <div class="setup-step-body">
+              <h3>Run the setup wizard</h3>
+              <div class="setup-cmd">openclaw better-search setup</div>
+              <p>Finds your API keys, asks which provider you want as the default, and writes the config file.</p>
             </div>
           </div>
-          <div class="step-line" aria-hidden="true"></div>
-          <div class="step">
-            <div class="step-number">3</div>
-            <div class="step-content">
-              <h3>Get normalized results</h3>
-              <p>Every provider returns results in the same shape: answers, citations, and links. If the primary provider fails, the fallback chain kicks in automatically.</p>
+
+          <div class="setup-step">
+            <div class="setup-step-num">3</div>
+            <div class="setup-step-body">
+              <h3>Search</h3>
+              <p>Your agent now uses <code>better_search</code> instead of the built-in tool. If your default provider is down, it falls back to the next one automatically.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Provider table -->
-      <section class="section" id="provider-matrix">
-        <div class="section-intro">
-          <h2 class="section-title">Provider matrix</h2>
-          <p class="section-desc">
-            Some providers return a list of links. Others synthesize an answer with citations.
-            Better Search normalizes both into one format so the agent can handle either.
-          </p>
-        </div>
-
-        <div class="provider-table-wrap">
-          <table class="provider-table">
-            <thead>
-              <tr>
-                <th>Provider</th>
-                <th>Type</th>
-                <th>Output</th>
-                <th>Freshness</th>
-                <th>Domain filters</th>
-                <th>Country</th>
-              </tr>
-            </thead>
-            <tbody>
-              {providers.map((p) => (
-                <tr>
-                  <td class="provider-name">{p.label}</td>
-                  <td><span class={tagClass(p.category)}>{p.category}</span></td>
-                  <td>{p.output}</td>
-                  <td>{p.freshness}</td>
-                  <td>{p.domains}</td>
-                  <td>{p.country}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <!-- ===== Under the hood ===== -->
+      <section class="hood" id="config">
+        <details class="hood-details">
+          <summary class="hood-summary">
+            <span>Under the hood</span>
+            <svg class="hood-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4" /></svg>
+          </summary>
+          <div class="hood-content">
+            <div class="hood-grid">
+              <div class="hood-text">
+                <h3>How Better Search decides where to send your query</h3>
+                <ol>
+                  <li>If the search call specifies a provider, use that one directly.</li>
+                  <li>Otherwise, use your configured default.</li>
+                  <li>If set to <code>"auto"</code>, pick the first provider with a valid API key.</li>
+                  <li>If the provider fails, try the next one in your fallback list.</li>
+                  <li>Format the response consistently no matter which provider answered.</li>
+                </ol>
+                <p>
+                  Traditional search providers (Brave, Exa, Parallel) return a list of links with snippets.
+                  AI-powered providers (OpenAI, Anthropic, Perplexity, Gemini) return a written answer with citations.
+                  Tavily does both. Better Search normalizes all of these into one format.
+                </p>
+              </div>
+              <div class="hood-code">
+                <div class="terminal">
+                  <div class="terminal-bar">
+                    <span class="terminal-bar-dots" aria-hidden="true">
+                      <span class="terminal-bar-dot"></span>
+                      <span class="terminal-bar-dot"></span>
+                      <span class="terminal-bar-dot"></span>
+                    </span>
+                    config snippet
+                  </div>
+                  <pre><code set:html={configCode} /></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
       </section>
 
-      <!-- Config -->
-      <section class="section" id="config">
-        <div class="section-intro">
-          <h2 class="section-title">Drop-in config</h2>
-          <p class="section-desc">
-            Set a default provider and optional fallbacks in your OpenClaw config.
-            You can also override the provider on any individual search call when a specific
-            backend makes more sense for the query.
-          </p>
-        </div>
-
-        <div class="terminal-wrap">
-          <div class="terminal">
-            <div class="terminal-bar">
-              <span class="terminal-bar-dots" aria-hidden="true">
-                <span class="terminal-bar-dot"></span>
-                <span class="terminal-bar-dot"></span>
-                <span class="terminal-bar-dot"></span>
-              </span>
-              openclaw.json
-            </div>
-            <pre><code set:html={configCode} /></pre>
-          </div>
-
-          <div class="terminal">
-            <div class="terminal-bar">
-              <span class="terminal-bar-dots" aria-hidden="true">
-                <span class="terminal-bar-dot"></span>
-                <span class="terminal-bar-dot"></span>
-                <span class="terminal-bar-dot"></span>
-              </span>
-              tool call
-            </div>
-            <pre><code set:html={toolCallCode} /></pre>
-          </div>
-        </div>
-      </section>
-
-      <!-- Footer -->
       <footer class="footer">
         <span>Better Search &middot; v0.1.0</span>
         <div class="footer-links">

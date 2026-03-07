@@ -38,6 +38,7 @@ Use it with:
 ```json
 {
   "query": "latest OpenAI web search docs",
+  "provider": "openai",
   "count": 5,
   "freshness": "pm",
   "country": "us",
@@ -51,6 +52,7 @@ Use it with:
 Supported parameters:
 
 - `query`: required search string
+- `provider`: optional per-call provider override such as `exa`, `openai`, `brave`, or `anthropic`
 - `count`: max number of results to request
 - `freshness`: relative or explicit date filter such as `pd`, `pw`, `pm`, `py`, or `YYYY-MM-DDtoYYYY-MM-DD`
 - `country`: country hint such as `us`
@@ -63,9 +65,10 @@ Supported parameters:
 
 1. Treat `better_search` as the preferred search tool.
 2. Use provider-neutral instructions unless the user explicitly wants a provider comparison or a specific backend.
-3. For technical or doc-heavy queries, use domain allow-lists when official sources matter.
-4. If the query needs a synthesized answer with citations, prefer answer-native providers such as OpenAI, Anthropic, Gemini, Tavily, or Perplexity.
-5. If the query mainly needs fast retrieval of links, traditional search providers such as Exa, Brave, or Parallel can be enough.
+3. Use the per-call `provider` override when the query clearly benefits from a specific backend.
+4. For technical or doc-heavy queries, use domain allow-lists when official sources matter.
+5. If the query needs a synthesized answer with citations, prefer answer-native providers such as OpenAI, Anthropic, Gemini, Tavily, or Perplexity.
+6. If the query mainly needs fast retrieval of links, traditional search providers such as Exa, Brave, or Parallel can be enough.
 
 ## Provider Notes
 

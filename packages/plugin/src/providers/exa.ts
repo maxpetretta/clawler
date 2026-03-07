@@ -1,6 +1,14 @@
+import type { ExaCategory } from "../config"
 import { parseFreshness, toIsoDateEnd, toIsoDateStart } from "./freshness"
 import { asSearchResultItem, normalizeDomains, requestJson, resolveApiKey } from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
+
+const DEFAULT_EXA_HIGHLIGHT_MAX_CHARACTERS = 4000
+
+const EXA_TOPIC_CATEGORY_MAP: Record<string, ExaCategory> = {
+  news: "news",
+  finance: "financial report",
+}
 
 type ExaResponse = {
   results?: Array<{
@@ -13,15 +21,27 @@ type ExaResponse = {
   }>
 }
 
-export function createExaBody(query: string, options: SearchOptions, searchType: string) {
+function resolveExaCategory(options: SearchOptions, configuredCategory?: ExaCategory): ExaCategory | undefined {
+  if (configuredCategory) {
+    return configuredCategory
+  }
+
+  if (!options.topic) {
+    return undefined
+  }
+
+  return EXA_TOPIC_CATEGORY_MAP[options.topic]
+}
+
+export function createExaBody(query: string, options: SearchOptions, config: ExaRequestConfig) {
   const freshness = parseFreshness(options.freshness)
   const body: Record<string, unknown> = {
     query,
-    type: searchType,
+    type: config.type,
     numResults: options.maxResults ?? 5,
     contents: {
       highlights: {
-        numSentences: 3,
+        maxCharacters: DEFAULT_EXA_HIGHLIGHT_MAX_CHARACTERS,
       },
     },
   }
@@ -37,10 +57,14 @@ export function createExaBody(query: string, options: SearchOptions, searchType:
     body.excludeDomains = excludeDomains
   }
 
-  if (options.topic === "news") {
-    body.category = "news"
-  } else if (options.topic === "finance") {
-    body.category = "financial report"
+  const category = resolveExaCategory(options, config.category)
+
+  if (category) {
+    body.category = category
+  }
+
+  if (typeof config.maxAgeHours === "number") {
+    body.maxAgeHours = config.maxAgeHours
   }
 
   if (freshness?.kind === "relative") {
@@ -56,6 +80,8 @@ export function createExaBody(query: string, options: SearchOptions, searchType:
 type ExaRequestConfig = {
   apiKey: string
   type: string
+  category?: ExaCategory
+  maxAgeHours?: number
   timeoutSeconds: number
 }
 
@@ -67,7 +93,7 @@ export function buildExaRequest(query: string, options: SearchOptions, config: E
       "content-type": "application/json",
       "x-api-key": config.apiKey,
     },
-    body: createExaBody(query, options, config.type),
+    body: createExaBody(query, options, config),
     timeoutSeconds: config.timeoutSeconds,
   }
 }
@@ -90,6 +116,8 @@ export const exaProvider: SearchProvider = {
     const request = buildExaRequest(query, options, {
       apiKey,
       type: context.config.exa.type,
+      category: context.config.exa.category,
+      maxAgeHours: context.config.exa.maxAgeHours,
       timeoutSeconds: context.config.timeoutSeconds,
     })
     const response = await requestJson<ExaResponse>("exa", request.url, context, request)

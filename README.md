@@ -1,8 +1,8 @@
-# Better Search
+# Clawler
 
 > Universal web search for OpenClaw.
 
-`better-search` is an OpenClaw plugin workspace focused on one job: replace the built-in `web_search` path with a provider-agnostic search tool that can route to traditional search APIs and model-native web search backends.
+`clawler` is an OpenClaw plugin workspace focused on one job: replace the built-in `web_search` path with a provider-agnostic search tool that can route to traditional search APIs and model-native web search backends.
 
 This repository is intentionally scaffolded in the same shape as `reclaw`:
 
@@ -23,9 +23,9 @@ bun run smoke
 
 | Package | Description |
 |---|---|
-| [`better-search`](packages/plugin) | OpenClaw plugin package |
-| [`@better-search/skill`](packages/skill) | ClawHub skill package |
-| [`@better-search/website`](packages/website) | Astro website |
+| [`clawler`](packages/plugin) | OpenClaw plugin package |
+| [`@clawler/skill`](packages/skill) | ClawHub skill package |
+| [`@clawler/website`](packages/website) | Astro website |
 
 ## Status
 

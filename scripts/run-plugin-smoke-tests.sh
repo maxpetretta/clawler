@@ -3,7 +3,7 @@ set -euo pipefail
 
 print_usage() {
   cat <<'EOF'
-Run the Better Search scaffold smoke tests.
+Run the Clawler scaffold smoke tests.
 
 Usage:
   scripts/run-plugin-smoke-tests.sh [options]
@@ -50,8 +50,8 @@ plugin_id=$(jq -r '.id' "$manifest")
 plugin_name=$(jq -r '.name' "$manifest")
 plugin_kind=$(jq -r '.kind' "$manifest")
 
-[[ "$plugin_id" == "better-search" ]] || fail "plugin id should be better-search"
-[[ "$plugin_name" == "Better Search" ]] || fail "plugin name should be Better Search"
+[[ "$plugin_id" == "clawler" ]] || fail "plugin id should be clawler"
+[[ "$plugin_name" == "Clawler" ]] || fail "plugin name should be Clawler"
 [[ "$plugin_kind" == "tool" ]] || fail "plugin kind should be tool"
 pass "manifest id=$plugin_id name=$plugin_name kind=$plugin_kind"
 

@@ -1,4 +1,4 @@
-# better-search — Spec
+# clawler — Spec
 
 > Universal web search plugin for OpenClaw.
 > Drop-in replacement for the built-in `web_search` tool.
@@ -9,11 +9,11 @@
 
 ## 1. Goal
 
-Better Search provides a single OpenClaw tool surface that can route web-search requests across multiple providers without changing the prompt interface the model sees.
+Clawler provides a single OpenClaw tool surface that can route web-search requests across multiple providers without changing the prompt interface the model sees.
 
 The plugin is designed to:
 
-1. Register a configurable tool name, defaulting to `better_search`.
+1. Register a configurable tool name, defaulting to `search_web`.
 2. Support both traditional search backends and model-native web-search APIs.
 3. Normalize their outputs into one result shape.
 4. Require no OpenClaw core patches.
@@ -40,7 +40,7 @@ Implemented now:
 - Eight provider integrations
 - Shared request options across providers
 - Plugin-level shared search defaults
-- Clack CLI commands for `better-search status` and `better-search setup`
+- Clack CLI commands for `clawler status` and `clawler setup`
 - Request-builder tests and live provider validation
 
 Not fully implemented yet:
@@ -82,7 +82,7 @@ When `provider: "auto"` is configured, the plugin resolves providers in this ord
 
 ```text
 agent
-  -> better_search(query, options)
+  -> search_web(query, options)
     -> if options.provider: use that provider (per-call override, no fallback)
     -> else: resolve configured default or auto-detect from available keys
     -> execute provider request
@@ -163,12 +163,12 @@ Some providers support them natively. Others only receive them as prompt guidanc
 {
   plugins: {
     entries: {
-      "better-search": {
+      "clawler": {
         enabled: true,
         config: {
           provider: "auto",
           fallback: ["perplexity", "brave"],
-          toolName: "better_search",
+          toolName: "search_web",
           maxResults: 5,
           cacheTtlMinutes: 15,
           timeoutSeconds: 60,
@@ -233,7 +233,7 @@ Some providers support them natively. Others only receive them as prompt guidanc
 
 `searchDefaults` is the shared config layer for request options that apply across providers.
 
-If a tool call omits one of these values, Better Search falls back to:
+If a tool call omits one of these values, Clawler falls back to:
 
 1. tool-call parameter
 2. plugin `searchDefaults`
@@ -720,20 +720,20 @@ Formatting rules:
 
 Currently implemented:
 
-- `better-search status`
-- `better-search setup`
+- `clawler status`
+- `clawler setup`
 
 Current behavior:
 
 - `status` shows provider availability and credential source
-- `setup` lets the user choose a default provider, shows detected providers, optionally captures a provider API key, writes the result into `~/.openclaw/openclaw.json`, and installs the bundled Better Search skill into OpenClaw's managed `skills/better-search` directory
+- `setup` lets the user choose a default provider, shows detected providers, optionally captures a provider API key, writes the result into `~/.openclaw/openclaw.json`, and installs the bundled Clawler skill into OpenClaw's managed `skills/clawler` directory
 - `setup` ensures:
-  - `plugins.allow` contains `better-search`
+  - `plugins.allow` contains `clawler`
   - `plugins.load.paths` contains the current plugin path
-  - `plugins.entries["better-search"].enabled = true`
-  - `plugins.entries["better-search"].config.provider` is set
+  - `plugins.entries["clawler"].enabled = true`
+  - `plugins.entries["clawler"].config.provider` is set
   - `tools.deny` includes `web_search` when requested
-  - the standalone skill package is copied into the OpenClaw state directory under `skills/better-search`
+  - the standalone skill package is copied into the OpenClaw state directory under `skills/clawler`
 
 ## 11. Validation
 

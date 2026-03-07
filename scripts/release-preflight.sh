@@ -3,7 +3,7 @@ set -euo pipefail
 
 print_usage() {
   cat <<'EOF'
-Validate Better Search release readiness.
+Validate Clawler release readiness.
 
 Usage:
   scripts/release-preflight.sh [options]

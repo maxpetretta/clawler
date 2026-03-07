@@ -1,6 +1,13 @@
 import type { BetterSearchConfig } from "../config"
-import { buildPromptWithGuidance, dedupeStrings, normalizeDomains, requestJson, resolveApiKey } from "./shared"
+import { buildPromptWithGuidance, normalizeDomains, requestJson, resolveApiKey } from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
+
+type OpenAICitation = {
+  url?: string
+  title?: string
+  start_index?: number
+  end_index?: number
+}
 
 type OpenAIResponse = {
   output_text?: string
@@ -9,10 +16,11 @@ type OpenAIResponse = {
     content?: Array<{
       type?: string
       text?: string
-      annotations?: Array<{
-        type?: string
-        url?: string
-      }>
+      annotations?: Array<
+        {
+          type?: string
+        } & OpenAICitation
+      >
     }>
     action?: {
       sources?: Array<{
@@ -28,9 +36,7 @@ type OpenAIChatCompletionsResponse = {
       content?: string
       annotations?: Array<{
         type?: string
-        url_citation?: {
-          url?: string
-        }
+        url_citation?: OpenAICitation
       }>
     }
   }>
@@ -39,6 +45,65 @@ type OpenAIChatCompletionsResponse = {
 type OpenAIRequestConfig = BetterSearchConfig["openai"] & {
   apiKey: string
   timeoutSeconds: number
+}
+
+type OpenAIUserLocation = {
+  type: "approximate"
+  country?: string
+  city?: string
+  region?: string
+  timezone?: string
+}
+
+function buildOpenAIUserLocation(options: SearchOptions, config: OpenAIRequestConfig): OpenAIUserLocation | undefined {
+  const country = options.country?.toUpperCase()
+  const city = config.city?.trim()
+  const region = config.region?.trim()
+  const timezone = config.timezone?.trim()
+
+  if (!country && !city && !region && !timezone) {
+    return undefined
+  }
+
+  return {
+    type: "approximate",
+    ...(country ? { country } : {}),
+    ...(city ? { city } : {}),
+    ...(region ? { region } : {}),
+    ...(timezone ? { timezone } : {}),
+  }
+}
+
+function formatOpenAICitation(citation: OpenAICitation | undefined): string | undefined {
+  const url = citation?.url?.trim()
+  const title = citation?.title?.trim()
+
+  if (!url) {
+    return undefined
+  }
+
+  return title ? `${title} — ${url}` : url
+}
+
+function dedupeOpenAICitations(citations: Array<OpenAICitation | undefined>): string[] {
+  const citationsByUrl = new Map<string, string>()
+
+  for (const citation of citations) {
+    const url = citation?.url?.trim()
+
+    if (!url) {
+      continue
+    }
+
+    const formatted = formatOpenAICitation(citation) ?? url
+    const existing = citationsByUrl.get(url)
+
+    if (!existing || (existing === url && formatted !== url)) {
+      citationsByUrl.set(url, formatted)
+    }
+  }
+
+  return Array.from(citationsByUrl.values())
 }
 
 export function buildOpenAIResponsesRequest(query: string, options: SearchOptions, config: OpenAIRequestConfig) {
@@ -57,11 +122,9 @@ export function buildOpenAIResponsesRequest(query: string, options: SearchOption
     }
   }
 
-  if (options.country) {
-    tool.user_location = {
-      type: "approximate",
-      country: options.country.toUpperCase(),
-    }
+  const userLocation = buildOpenAIUserLocation(options, config)
+  if (userLocation) {
+    tool.user_location = userLocation
   }
 
   return {
@@ -139,7 +202,7 @@ export const openaiProvider: SearchProvider = {
         provider: "openai",
         query,
         answer: message?.content?.trim(),
-        citations: dedupeStrings(message?.annotations?.map((annotation) => annotation.url_citation?.url)),
+        citations: dedupeOpenAICitations(message?.annotations?.map((annotation) => annotation.url_citation) ?? []),
       }
     }
 
@@ -154,11 +217,11 @@ export const openaiProvider: SearchProvider = {
         .filter(Boolean)
         .join("\n")
         .trim()
-    const citations = dedupeStrings([
-      ...messageParts.flatMap((part) => part.annotations?.map((annotation) => annotation.url) ?? []),
+    const citations = dedupeOpenAICitations([
+      ...messageParts.flatMap((part) => part.annotations ?? []),
       ...(response.output
         ?.filter((item) => item.type === "web_search_call")
-        .flatMap((item) => item.action?.sources?.map((source) => source.url) ?? []) ?? []),
+        .flatMap((item) => item.action?.sources?.map((source) => ({ url: source.url })) ?? []) ?? []),
     ])
 
     return {

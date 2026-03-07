@@ -7,26 +7,29 @@ type AnthropicCitation = {
   url?: string
 }
 
+type AnthropicTextBlock = {
+  type?: "text"
+  text?: string
+  citations?: AnthropicCitation[]
+}
+
+type AnthropicWebSearchResultItem = {
+  type?: string
+  url?: string
+  title?: string
+  text?: string
+}
+
+type AnthropicWebSearchToolResultBlock = {
+  type?: "web_search_tool_result"
+  content?: { type?: string; error?: string } | AnthropicWebSearchResultItem[]
+}
+
+type AnthropicContentBlock = AnthropicTextBlock | AnthropicWebSearchToolResultBlock
+
 type AnthropicResponse = {
   stop_reason?: string
-  content?: Array<
-    | {
-        type?: "text"
-        text?: string
-        citations?: AnthropicCitation[]
-      }
-    | {
-        type?: "web_search_tool_result"
-        content?:
-          | { type?: string; error?: string }
-          | Array<{
-              type?: string
-              url?: string
-              title?: string
-              text?: string
-            }>
-      }
-  >
+  content?: AnthropicContentBlock[]
 }
 
 type AnthropicRequestConfig = BetterSearchConfig["anthropic"] & {
@@ -47,18 +50,21 @@ export function buildAnthropicRequest(query: string, options: SearchOptions, con
     tool.allowed_callers = ["direct"]
   }
 
-  if (includeDomains && excludeDomains) {
+  if (includeDomains) {
     tool.allowed_domains = includeDomains
-  } else if (includeDomains) {
-    tool.allowed_domains = includeDomains
-  } else if (excludeDomains) {
+  }
+
+  if (excludeDomains) {
     tool.blocked_domains = excludeDomains
   }
 
   if (options.country) {
     tool.user_location = {
       type: "approximate",
+      ...(config.city ? { city: config.city } : {}),
+      ...(config.region ? { region: config.region } : {}),
       country: options.country.toUpperCase(),
+      ...(config.timezone ? { timezone: config.timezone } : {}),
     }
   }
 
@@ -72,7 +78,7 @@ export function buildAnthropicRequest(query: string, options: SearchOptions, con
     },
     body: {
       model: config.model,
-      max_tokens: 1024,
+      max_tokens: config.maxTokens,
       messages: [
         {
           role: "user",
@@ -110,15 +116,13 @@ export const anthropicProvider: SearchProvider = {
       timeoutSeconds: context.config.timeoutSeconds,
     })
     const response = await runAnthropicRequest(request, context)
-    const textBlocks = response.content?.filter((block) => block.type === "text") ?? []
+    const textBlocks = response.content?.filter(isAnthropicTextBlock) ?? []
     const answer = textBlocks
       .map((block) => block.text)
       .filter(Boolean)
       .join("\n")
       .trim()
-    const citations = dedupeStrings(
-      textBlocks.flatMap((block) => block.citations?.map((citation) => citation.url) ?? []),
-    )
+    const citations = collectAnthropicCitationUrls(response.content)
 
     return {
       provider: "anthropic",
@@ -133,25 +137,72 @@ async function runAnthropicRequest(
   request: ReturnType<typeof buildAnthropicRequest>,
   context: Parameters<SearchProvider["search"]>[2],
 ): Promise<AnthropicResponse> {
-  const initialResponse = await requestJson<AnthropicResponse>("anthropic", request.url, context, request)
+  const responses: AnthropicResponse[] = []
+  const originalMessages = ((request.body as { messages?: unknown[] }).messages ?? []).slice()
+  const continuationMessages: Array<{ role: "assistant"; content: AnthropicContentBlock[] }> = []
+  const maxIterations = 5
+  let iterations = 0
+  let response = await requestJson<AnthropicResponse>("anthropic", request.url, context, request)
 
-  if (initialResponse.stop_reason !== "pause_turn") {
-    return initialResponse
+  responses.push(response)
+
+  while (response.stop_reason === "pause_turn" && iterations < maxIterations) {
+    continuationMessages.push({
+      role: "assistant",
+      content: response.content ?? [],
+    })
+
+    const continuedBody = {
+      ...(request.body as Record<string, unknown>),
+      messages: [...originalMessages, ...continuationMessages],
+    }
+
+    response = await requestJson<AnthropicResponse>("anthropic", request.url, context, {
+      ...request,
+      body: continuedBody,
+    })
+
+    responses.push(response)
+    iterations += 1
   }
 
-  const continuedBody = {
-    ...(request.body as Record<string, unknown>),
-    messages: [
-      ...((request.body as { messages: unknown[] }).messages ?? []),
-      {
-        role: "assistant",
-        content: initialResponse.content ?? [],
-      },
-    ],
+  return mergeAnthropicResponses(responses)
+}
+
+function mergeAnthropicResponses(responses: AnthropicResponse[]): AnthropicResponse {
+  const lastResponse = responses.at(-1) ?? {}
+
+  return {
+    ...lastResponse,
+    content: responses.flatMap((response) => response.content ?? []),
+  }
+}
+
+function isAnthropicTextBlock(block: AnthropicContentBlock): block is AnthropicTextBlock {
+  return block.type === "text"
+}
+
+function isAnthropicWebSearchToolResultBlock(
+  block: AnthropicContentBlock,
+): block is AnthropicWebSearchToolResultBlock {
+  return block.type === "web_search_tool_result"
+}
+
+function collectAnthropicCitationUrls(content: AnthropicContentBlock[] | undefined): string[] {
+  const citations: Array<string | undefined> = []
+
+  for (const block of content ?? []) {
+    if (isAnthropicTextBlock(block)) {
+      citations.push(...(block.citations?.map((citation) => citation.url) ?? []))
+      continue
+    }
+
+    if (!isAnthropicWebSearchToolResultBlock(block) || !Array.isArray(block.content)) {
+      continue
+    }
+
+    citations.push(...block.content.map((item) => item.url))
   }
 
-  return requestJson<AnthropicResponse>("anthropic", request.url, context, {
-    ...request,
-    body: continuedBody,
-  })
+  return dedupeStrings(citations)
 }

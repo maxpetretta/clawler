@@ -122,8 +122,8 @@ const DEFAULT_CONFIG: BetterSearchConfig = {
     apiMode: "search",
     baseUrl: "https://api.perplexity.ai",
     model: "sonar-pro",
-    maxTokens: 10000,
-    maxTokensPerPage: 4096,
+    maxTokens: 5000,
+    maxTokensPerPage: 2048,
   },
   parallel: {
     mode: "one-shot",
@@ -505,14 +505,14 @@ export const betterSearchConfigSchema = {
         },
         maxTokens: {
           type: "integer",
-          default: 10000,
+          default: 5000,
           minimum: 1,
           maximum: 1000000,
           description: "Maximum total tokens for search context (API default: 10000)",
         },
         maxTokensPerPage: {
           type: "integer",
-          default: 4096,
+          default: 2048,
           minimum: 1,
           maximum: 1000000,
           description: "Maximum tokens per page snippet (API default: 4096)",

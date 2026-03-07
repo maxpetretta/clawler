@@ -1,5 +1,5 @@
 import type { ClawlerConfig } from "../config"
-import { buildPromptWithGuidance, dedupeStrings, requestJson, resolveApiKey } from "./shared"
+import { buildPromptWithGuidance, dedupeStrings, hasApiKey, providerEnvVars, requestJson, requireApiKey } from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
 
 type GeminiGroundingMetadata = {
@@ -36,6 +36,15 @@ type GeminiResponse = {
 type GeminiRequestConfig = ClawlerConfig["gemini"] & {
   apiKey: string
   timeoutSeconds: number
+}
+
+const HTML_ENTITY_MAP: Record<string, string> = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&apos;": "'",
+  "&#39;": "'",
 }
 
 export function buildGeminiRequest(query: string, options: SearchOptions, config: GeminiRequestConfig) {
@@ -76,18 +85,13 @@ export function buildGeminiRequest(query: string, options: SearchOptions, config
 export const geminiProvider: SearchProvider = {
   id: "gemini",
   name: "Gemini",
-  envVars: ["GEMINI_API_KEY"],
+  envVars: providerEnvVars("gemini"),
   category: "llm",
   isAvailable(config, env = process.env) {
-    return Boolean(resolveApiKey(config, "gemini", env))
+    return hasApiKey(config, "gemini", env)
   },
   async search(query, options, context) {
-    const apiKey = resolveApiKey(context.config, "gemini", context.env)
-
-    if (!apiKey) {
-      throw new Error("Gemini is not configured.")
-    }
-
+    const apiKey = requireApiKey(context.config, "gemini", context.env)
     const request = buildGeminiRequest(query, options, {
       ...context.config.gemini,
       apiKey,
@@ -117,18 +121,27 @@ export const geminiProvider: SearchProvider = {
 }
 
 function buildGeminiCitations(groundingMetadata: GeminiGroundingMetadata | undefined): string[] {
-  const renderedContentUrls = extractRenderedContentUrls(groundingMetadata?.searchEntryPoint?.renderedContent)
+  const structuredUrls = extractStructuredGroundingUrls(groundingMetadata)
 
-  if (renderedContentUrls.length > 0) {
-    return renderedContentUrls
+  if (structuredUrls.length > 0) {
+    return structuredUrls
   }
 
+  return extractRenderedContentUrls(groundingMetadata?.searchEntryPoint?.renderedContent)
+}
+
+function extractStructuredGroundingUrls(groundingMetadata: GeminiGroundingMetadata | undefined): string[] {
   const groundingChunks = groundingMetadata?.groundingChunks ?? []
   const supportedChunkUris = groundingMetadata?.groundingSupports
     ?.flatMap((support) => support.groundingChunkIndices ?? [])
     .map((index) => groundingChunks[index]?.web?.uri)
+  const preferredUrls = dedupeStrings(supportedChunkUris)
 
-  return dedupeStrings(supportedChunkUris?.length ? supportedChunkUris : groundingChunks.map((chunk) => chunk.web?.uri))
+  if (preferredUrls.length > 0) {
+    return preferredUrls
+  }
+
+  return dedupeStrings(groundingChunks.map((chunk) => chunk.web?.uri))
 }
 
 function extractRenderedContentUrls(renderedContent: string | undefined): string[] {
@@ -136,29 +149,31 @@ function extractRenderedContentUrls(renderedContent: string | undefined): string
     return []
   }
 
-  const matches = renderedContent.matchAll(/href\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/giu)
   const urls: string[] = []
 
-  for (const match of matches) {
+  for (const match of renderedContent.matchAll(/href\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/giu)) {
     const href = match[1] ?? match[2] ?? match[3]
-    const decodedHref = decodeHtmlAttribute(href)
+    const url = tryParseHttpUrl(decodeHtmlAttribute(href))
 
-    if (!decodedHref) {
-      continue
-    }
-
-    try {
-      const url = new URL(decodedHref)
-
-      if (url.protocol === "http:" || url.protocol === "https:") {
-        urls.push(url.toString())
-      }
-    } catch {
-      continue
+    if (url) {
+      urls.push(url)
     }
   }
 
   return dedupeStrings(urls)
+}
+
+function tryParseHttpUrl(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined
+  }
+
+  try {
+    const url = new URL(value)
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : undefined
+  } catch {
+    return undefined
+  }
 }
 
 function decodeHtmlAttribute(value: string | undefined): string | undefined {
@@ -175,20 +190,6 @@ function decodeHtmlAttribute(value: string | undefined): string | undefined {
       return String.fromCodePoint(Number.parseInt(decimal, 10))
     }
 
-    switch (match.toLowerCase()) {
-      case "&amp;":
-        return "&"
-      case "&lt;":
-        return "<"
-      case "&gt;":
-        return ">"
-      case "&quot;":
-        return '"'
-      case "&apos;":
-      case "&#39;":
-        return "'"
-      default:
-        return match
-    }
+    return HTML_ENTITY_MAP[match.toLowerCase()] ?? match
   })
 }

@@ -231,7 +231,7 @@ describe("provider search normalization", () => {
     )
 
     expect(result.answer).toBe("Part 1\nPart 2")
-    expect(result.citations).toEqual(["https://example.com/article?ref=1&lang=en", "https://second.example/path"])
+    expect(result.citations).toEqual(["https://vertexaisearch.cloud.google.com/grounding-api-redirect/one", "https://vertexaisearch.cloud.google.com/grounding-api-redirect/two"])
     expect(result.meta).toEqual({ webSearchQueries: ["query one", "query two"] })
   })
 

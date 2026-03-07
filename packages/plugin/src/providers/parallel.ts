@@ -1,6 +1,14 @@
 import type { ClawlerConfig } from "../config"
 import { parseFreshness } from "./freshness"
-import { asSearchResultItem, buildPromptWithGuidance, normalizeDomains, requestJson, resolveApiKey } from "./shared"
+import {
+  asSearchResultItem,
+  buildPromptWithGuidance,
+  hasApiKey,
+  normalizeDomains,
+  providerEnvVars,
+  requestJson,
+  requireApiKey,
+} from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
 
 type ParallelResponse = {
@@ -77,18 +85,13 @@ export function buildParallelRequest(query: string, options: SearchOptions, conf
 export const parallelProvider: SearchProvider = {
   id: "parallel",
   name: "Parallel",
-  envVars: ["PARALLEL_API_KEY"],
+  envVars: providerEnvVars("parallel"),
   category: "traditional",
   isAvailable(config, env = process.env) {
-    return Boolean(resolveApiKey(config, "parallel", env))
+    return hasApiKey(config, "parallel", env)
   },
   async search(query, options, context) {
-    const apiKey = resolveApiKey(context.config, "parallel", context.env)
-
-    if (!apiKey) {
-      throw new Error("Parallel is not configured.")
-    }
-
+    const apiKey = requireApiKey(context.config, "parallel", context.env)
     const request = buildParallelRequest(query, options, {
       ...context.config.parallel,
       apiKey,

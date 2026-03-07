@@ -1,6 +1,13 @@
 import type { ClawlerConfig } from "../config"
 import { parseFreshness } from "./freshness"
-import { asSearchResultItem, buildQueryWithDomainFilters, requestJson, resolveApiKey } from "./shared"
+import {
+  asSearchResultItem,
+  buildQueryWithDomainFilters,
+  hasApiKey,
+  providerEnvVars,
+  requestJson,
+  requireApiKey,
+} from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
 
 type BraveResponse = {
@@ -90,18 +97,13 @@ function buildBraveRichRequest(callbackKey: string, apiKey: string, timeoutSecon
 export const braveProvider: SearchProvider = {
   id: "brave",
   name: "Brave",
-  envVars: ["BRAVE_API_KEY"],
+  envVars: providerEnvVars("brave"),
   category: "traditional",
   isAvailable(config, env = process.env) {
-    return Boolean(resolveApiKey(config, "brave", env))
+    return hasApiKey(config, "brave", env)
   },
   async search(query, options, context) {
-    const apiKey = resolveApiKey(context.config, "brave", context.env)
-
-    if (!apiKey) {
-      throw new Error("Brave is not configured.")
-    }
-
+    const apiKey = requireApiKey(context.config, "brave", context.env)
     const request = buildBraveRequest(query, options, apiKey, context.config.timeoutSeconds, context.config.brave)
     const response = await requestJson<BraveResponse>("brave", request.url, context, request)
     let richData: BraveRichResponse | undefined

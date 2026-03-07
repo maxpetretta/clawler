@@ -5,6 +5,41 @@ import type { ProviderId, SearchOptions, SearchProviderContext, SearchResultItem
 
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" })
 
+const providerNames: Record<ProviderId, string> = {
+  brave: "Brave",
+  exa: "Exa",
+  tavily: "Tavily",
+  perplexity: "Perplexity",
+  parallel: "Parallel",
+  gemini: "Gemini",
+  openai: "OpenAI",
+  anthropic: "Anthropic",
+}
+
+const providerEnvVarMap: Record<ProviderId, string[]> = {
+  brave: ["BRAVE_API_KEY"],
+  exa: ["EXA_API_KEY"],
+  tavily: ["TAVILY_API_KEY"],
+  perplexity: ["PERPLEXITY_API_KEY", "OPENROUTER_API_KEY"],
+  parallel: ["PARALLEL_API_KEY"],
+  gemini: ["GEMINI_API_KEY", "GOOGLE_AI_API_KEY"],
+  openai: ["OPENAI_API_KEY"],
+  anthropic: ["ANTHROPIC_API_KEY"],
+}
+
+type ApproximateUserLocation = {
+  type: "approximate"
+  country?: string
+  city?: string
+  region?: string
+  timezone?: string
+}
+
+type UrlCitation = {
+  url?: string
+  title?: string
+}
+
 export function createProviderRequest(
   provider: ProviderId,
   url: string,
@@ -106,6 +141,67 @@ export function dedupeStrings(values: Array<string | undefined> | undefined): st
   return Array.from(new Set((values ?? []).filter((value): value is string => Boolean(value && value.length > 0))))
 }
 
+export function buildApproximateUserLocation({
+  country,
+  city,
+  region,
+  timezone,
+}: {
+  country?: string
+  city?: string
+  region?: string
+  timezone?: string
+}): ApproximateUserLocation | undefined {
+  const normalizedCountry = country?.trim().toUpperCase()
+  const normalizedCity = city?.trim()
+  const normalizedRegion = region?.trim()
+  const normalizedTimezone = timezone?.trim()
+
+  if (!normalizedCountry && !normalizedCity && !normalizedRegion && !normalizedTimezone) {
+    return undefined
+  }
+
+  return {
+    type: "approximate",
+    ...(normalizedCountry ? { country: normalizedCountry } : {}),
+    ...(normalizedCity ? { city: normalizedCity } : {}),
+    ...(normalizedRegion ? { region: normalizedRegion } : {}),
+    ...(normalizedTimezone ? { timezone: normalizedTimezone } : {}),
+  }
+}
+
+export function formatUrlCitation(citation: UrlCitation | undefined): string | undefined {
+  const url = citation?.url?.trim()
+  const title = citation?.title?.trim()
+
+  if (!url) {
+    return undefined
+  }
+
+  return title ? `${title} — ${url}` : url
+}
+
+export function dedupeUrlCitations(citations: Array<UrlCitation | undefined>): string[] {
+  const citationsByUrl = new Map<string, string>()
+
+  for (const citation of citations) {
+    const url = citation?.url?.trim()
+
+    if (!url) {
+      continue
+    }
+
+    const formatted = formatUrlCitation(citation) ?? url
+    const existing = citationsByUrl.get(url)
+
+    if (!existing || (existing === url && formatted !== url)) {
+      citationsByUrl.set(url, formatted)
+    }
+  }
+
+  return Array.from(citationsByUrl.values())
+}
+
 export function resolveApiKey(
   config: ClawlerConfig,
   providerId: ProviderId,
@@ -121,32 +217,37 @@ export function resolveApiKey(
   }
 
   if (providerId === "gemini") {
-    return config.gemini.apiKey ?? env.GEMINI_API_KEY ?? env.GOOGLE_AI_API_KEY
+    return env.GEMINI_API_KEY ?? env.GOOGLE_AI_API_KEY
   }
 
   const envVar = providerEnvVars(providerId)[0]
   return env[envVar]
 }
 
-export function providerEnvVars(providerId: ProviderId): string[] {
-  switch (providerId) {
-    case "brave":
-      return ["BRAVE_API_KEY"]
-    case "exa":
-      return ["EXA_API_KEY"]
-    case "tavily":
-      return ["TAVILY_API_KEY"]
-    case "perplexity":
-      return ["PERPLEXITY_API_KEY", "OPENROUTER_API_KEY"]
-    case "parallel":
-      return ["PARALLEL_API_KEY"]
-    case "gemini":
-      return ["GEMINI_API_KEY", "GOOGLE_AI_API_KEY"]
-    case "openai":
-      return ["OPENAI_API_KEY"]
-    case "anthropic":
-      return ["ANTHROPIC_API_KEY"]
+export function hasApiKey(
+  config: ClawlerConfig,
+  providerId: ProviderId,
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return Boolean(resolveApiKey(config, providerId, env))
+}
+
+export function requireApiKey(
+  config: ClawlerConfig,
+  providerId: ProviderId,
+  env: Record<string, string | undefined> = process.env,
+): string {
+  const apiKey = resolveApiKey(config, providerId, env)
+
+  if (!apiKey) {
+    throw new Error(`${providerNames[providerId]} is not configured.`)
   }
+
+  return apiKey
+}
+
+export function providerEnvVars(providerId: ProviderId): string[] {
+  return providerEnvVarMap[providerId]
 }
 
 export function providerCredentialSource(
@@ -179,33 +280,5 @@ export function asSearchResultItem(item: SearchResultItem): SearchResultItem {
 }
 
 function readProviderApiKey(config: ClawlerConfig, providerId: ProviderId): string | undefined {
-  if (providerId === "brave") {
-    return config.brave.apiKey
-  }
-
-  if (providerId === "exa") {
-    return config.exa.apiKey
-  }
-
-  if (providerId === "tavily") {
-    return config.tavily.apiKey
-  }
-
-  if (providerId === "perplexity") {
-    return config.perplexity.apiKey
-  }
-
-  if (providerId === "parallel") {
-    return config.parallel.apiKey
-  }
-
-  if (providerId === "gemini") {
-    return config.gemini.apiKey
-  }
-
-  if (providerId === "openai") {
-    return config.openai.apiKey
-  }
-
-  return config.anthropic.apiKey
+  return config[providerId].apiKey
 }

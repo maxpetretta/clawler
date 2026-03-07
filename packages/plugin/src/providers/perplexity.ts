@@ -1,6 +1,14 @@
 import type { ClawlerConfig } from "../config"
 import { parseFreshness, toUsDate } from "./freshness"
-import { buildPromptWithGuidance, dedupeStrings, normalizeDomains, requestJson, resolveApiKey } from "./shared"
+import {
+  buildPromptWithGuidance,
+  dedupeStrings,
+  hasApiKey,
+  normalizeDomains,
+  providerEnvVars,
+  requestJson,
+  requireApiKey,
+} from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
 
 type PerplexitySearchResult = {
@@ -148,23 +156,16 @@ function buildSearchDomainFilter(
   return [...(includeDomains ?? []), ...((excludeDomains ?? []).map((domain) => `-${domain}`))]
 }
 
-
-
 export const perplexityProvider: SearchProvider = {
   id: "perplexity",
   name: "Perplexity",
-  envVars: ["PERPLEXITY_API_KEY", "OPENROUTER_API_KEY"],
+  envVars: providerEnvVars("perplexity"),
   category: "llm",
   isAvailable(config, env = process.env) {
-    return Boolean(resolveApiKey(config, "perplexity", env))
+    return hasApiKey(config, "perplexity", env)
   },
   async search(query, options, context) {
-    const apiKey = resolveApiKey(context.config, "perplexity", context.env)
-
-    if (!apiKey) {
-      throw new Error("Perplexity is not configured.")
-    }
-
+    const apiKey = requireApiKey(context.config, "perplexity", context.env)
     const viaOpenRouter =
       !(context.config.perplexity.apiKey || context.env.PERPLEXITY_API_KEY) && Boolean(context.env.OPENROUTER_API_KEY)
     const baseUrl = viaOpenRouter ? "https://openrouter.ai/api/v1" : context.config.perplexity.baseUrl

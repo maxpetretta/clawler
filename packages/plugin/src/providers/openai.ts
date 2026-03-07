@@ -1,5 +1,14 @@
 import type { ClawlerConfig } from "../config"
-import { buildPromptWithGuidance, normalizeDomains, requestJson, resolveApiKey } from "./shared"
+import {
+  buildApproximateUserLocation,
+  buildPromptWithGuidance,
+  dedupeUrlCitations,
+  providerEnvVars,
+  hasApiKey,
+  normalizeDomains,
+  requestJson,
+  requireApiKey,
+} from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
 
 type OpenAICitation = {
@@ -47,63 +56,13 @@ type OpenAIRequestConfig = ClawlerConfig["openai"] & {
   timeoutSeconds: number
 }
 
-type OpenAIUserLocation = {
-  type: "approximate"
-  country?: string
-  city?: string
-  region?: string
-  timezone?: string
-}
-
-function buildOpenAIUserLocation(options: SearchOptions, config: OpenAIRequestConfig): OpenAIUserLocation | undefined {
-  const country = options.country?.toUpperCase()
-  const city = config.city?.trim()
-  const region = config.region?.trim()
-  const timezone = config.timezone?.trim()
-
-  if (!country && !city && !region && !timezone) {
-    return undefined
-  }
-
-  return {
-    type: "approximate",
-    ...(country ? { country } : {}),
-    ...(city ? { city } : {}),
-    ...(region ? { region } : {}),
-    ...(timezone ? { timezone } : {}),
-  }
-}
-
-function formatOpenAICitation(citation: OpenAICitation | undefined): string | undefined {
-  const url = citation?.url?.trim()
-  const title = citation?.title?.trim()
-
-  if (!url) {
-    return undefined
-  }
-
-  return title ? `${title} — ${url}` : url
-}
-
-function dedupeOpenAICitations(citations: Array<OpenAICitation | undefined>): string[] {
-  const citationsByUrl = new Map<string, string>()
-
-  for (const citation of citations) {
-    const url = citation?.url?.trim()
-
-    if (!url) {
-      continue
-    }
-
-    const formatted = formatOpenAICitation(citation) ?? url
-    const existing = citationsByUrl.get(url)
-
-    if (!existing || (existing === url && formatted !== url)) {
-      citationsByUrl.set(url, formatted)
-    }
-  }
-
-  return Array.from(citationsByUrl.values())
+function buildOpenAIUserLocation(options: SearchOptions, config: OpenAIRequestConfig) {
+  return buildApproximateUserLocation({
+    country: options.country,
+    city: config.city,
+    region: config.region,
+    timezone: config.timezone,
+  })
 }
 
 export function buildOpenAIResponsesRequest(query: string, options: SearchOptions, config: OpenAIRequestConfig) {
@@ -175,18 +134,13 @@ export function buildOpenAIChatCompletionsRequest(query: string, options: Search
 export const openaiProvider: SearchProvider = {
   id: "openai",
   name: "OpenAI",
-  envVars: ["OPENAI_API_KEY"],
+  envVars: providerEnvVars("openai"),
   category: "llm",
   isAvailable(config, env = process.env) {
-    return Boolean(resolveApiKey(config, "openai", env))
+    return hasApiKey(config, "openai", env)
   },
   async search(query, options, context) {
-    const apiKey = resolveApiKey(context.config, "openai", context.env)
-
-    if (!apiKey) {
-      throw new Error("OpenAI is not configured.")
-    }
-
+    const apiKey = requireApiKey(context.config, "openai", context.env)
     const requestConfig = {
       ...context.config.openai,
       apiKey,
@@ -202,7 +156,7 @@ export const openaiProvider: SearchProvider = {
         provider: "openai",
         query,
         answer: message?.content?.trim(),
-        citations: dedupeOpenAICitations(message?.annotations?.map((annotation) => annotation.url_citation) ?? []),
+        citations: dedupeUrlCitations(message?.annotations?.map((annotation) => annotation.url_citation) ?? []),
       }
     }
 
@@ -217,7 +171,7 @@ export const openaiProvider: SearchProvider = {
         .filter(Boolean)
         .join("\n")
         .trim()
-    const citations = dedupeOpenAICitations([
+    const citations = dedupeUrlCitations([
       ...messageParts.flatMap((part) => part.annotations ?? []),
       ...(response.output
         ?.filter((item) => item.type === "web_search_call")

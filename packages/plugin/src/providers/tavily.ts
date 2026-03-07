@@ -1,6 +1,14 @@
 import type { ClawlerConfig } from "../config"
 import { parseFreshness } from "./freshness"
-import { asSearchResultItem, isoCountryName, normalizeDomains, requestJson, resolveApiKey } from "./shared"
+import {
+  asSearchResultItem,
+  hasApiKey,
+  isoCountryName,
+  normalizeDomains,
+  providerEnvVars,
+  requestJson,
+  requireApiKey,
+} from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
 
 type TavilyResponse = {
@@ -109,18 +117,13 @@ export function buildTavilyRequest(query: string, options: SearchOptions, config
 export const tavilyProvider: SearchProvider = {
   id: "tavily",
   name: "Tavily",
-  envVars: ["TAVILY_API_KEY"],
+  envVars: providerEnvVars("tavily"),
   category: "hybrid",
   isAvailable(config, env = process.env) {
-    return Boolean(resolveApiKey(config, "tavily", env))
+    return hasApiKey(config, "tavily", env)
   },
   async search(query, options, context) {
-    const apiKey = resolveApiKey(context.config, "tavily", context.env)
-
-    if (!apiKey) {
-      throw new Error("Tavily is not configured.")
-    }
-
+    const apiKey = requireApiKey(context.config, "tavily", context.env)
     const request = buildTavilyRequest(query, options, {
       ...context.config.tavily,
       apiKey,

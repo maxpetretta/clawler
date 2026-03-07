@@ -1,5 +1,14 @@
 import type { ClawlerConfig } from "../config"
-import { buildPromptWithGuidance, dedupeStrings, normalizeDomains, requestJson, resolveApiKey } from "./shared"
+import {
+  buildApproximateUserLocation,
+  buildPromptWithGuidance,
+  dedupeStrings,
+  providerEnvVars,
+  hasApiKey,
+  normalizeDomains,
+  requestJson,
+  requireApiKey,
+} from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
 
 type AnthropicCitation = {
@@ -58,14 +67,16 @@ export function buildAnthropicRequest(query: string, options: SearchOptions, con
     tool.blocked_domains = excludeDomains
   }
 
-  if (options.country) {
-    tool.user_location = {
-      type: "approximate",
-      ...(config.city ? { city: config.city } : {}),
-      ...(config.region ? { region: config.region } : {}),
-      country: options.country.toUpperCase(),
-      ...(config.timezone ? { timezone: config.timezone } : {}),
-    }
+  const userLocation = options.country
+    ? buildApproximateUserLocation({
+        country: options.country,
+        city: config.city,
+        region: config.region,
+        timezone: config.timezone,
+      })
+    : undefined
+  if (userLocation) {
+    tool.user_location = userLocation
   }
 
   return {
@@ -98,18 +109,13 @@ export function buildAnthropicRequest(query: string, options: SearchOptions, con
 export const anthropicProvider: SearchProvider = {
   id: "anthropic",
   name: "Anthropic",
-  envVars: ["ANTHROPIC_API_KEY"],
+  envVars: providerEnvVars("anthropic"),
   category: "llm",
   isAvailable(config, env = process.env) {
-    return Boolean(resolveApiKey(config, "anthropic", env))
+    return hasApiKey(config, "anthropic", env)
   },
   async search(query, options, context) {
-    const apiKey = resolveApiKey(context.config, "anthropic", context.env)
-
-    if (!apiKey) {
-      throw new Error("Anthropic is not configured.")
-    }
-
+    const apiKey = requireApiKey(context.config, "anthropic", context.env)
     const request = buildAnthropicRequest(query, options, {
       ...context.config.anthropic,
       apiKey,

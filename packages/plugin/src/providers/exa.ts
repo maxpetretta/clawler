@@ -1,6 +1,6 @@
 import type { ExaCategory } from "../config"
 import { parseFreshness, toIsoDateEnd, toIsoDateStart } from "./freshness"
-import { asSearchResultItem, normalizeDomains, requestJson, resolveApiKey } from "./shared"
+import { asSearchResultItem, hasApiKey, normalizeDomains, providerEnvVars, requestJson, requireApiKey } from "./shared"
 import type { SearchOptions, SearchProvider } from "./types"
 
 const DEFAULT_EXA_HIGHLIGHT_MAX_CHARACTERS = 4000
@@ -101,18 +101,13 @@ export function buildExaRequest(query: string, options: SearchOptions, config: E
 export const exaProvider: SearchProvider = {
   id: "exa",
   name: "Exa",
-  envVars: ["EXA_API_KEY"],
+  envVars: providerEnvVars("exa"),
   category: "traditional",
   isAvailable(config, env = process.env) {
-    return Boolean(resolveApiKey(config, "exa", env))
+    return hasApiKey(config, "exa", env)
   },
   async search(query, options, context) {
-    const apiKey = resolveApiKey(context.config, "exa", context.env)
-
-    if (!apiKey) {
-      throw new Error("Exa is not configured.")
-    }
-
+    const apiKey = requireApiKey(context.config, "exa", context.env)
     const request = buildExaRequest(query, options, {
       apiKey,
       type: context.config.exa.type,

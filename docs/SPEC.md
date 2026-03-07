@@ -83,7 +83,8 @@ When `provider: "auto"` is configured, the plugin resolves providers in this ord
 ```text
 agent
   -> better_search(query, options)
-    -> resolve configured or auto-detected provider
+    -> if options.provider: use that provider (per-call override)
+    -> else: resolve configured default or auto-detect from available keys
     -> execute provider request
     -> normalize provider response
     -> format response text for the agent
@@ -125,6 +126,7 @@ The registered tool accepts:
 ```json5
 {
   query: "string",
+  provider: "brave | exa | tavily | perplexity | parallel | gemini | openai | anthropic",
   count: 5,
   freshness: "pd | pw | pm | py | YYYY-MM-DDtoYYYY-MM-DD",
   country: "us",
@@ -134,6 +136,8 @@ The registered tool accepts:
   exclude_domains: ["example.com"]
 }
 ```
+
+- `provider` (optional): Override the default search provider for this call. If omitted, uses the configured default or auto-detection. This enables per-query provider selection — e.g., use `exa` for research, `openai` for complex reasoning, `brave` for fast structured results.
 
 ### 5.1 Shared request options
 

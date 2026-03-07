@@ -23,6 +23,20 @@ describe("provider registry", () => {
     expect(provider.id).toBe("openai")
   })
 
+  test("per-call provider override wins over the configured default", () => {
+    const config = resolveConfig({ provider: "openai" })
+    const provider = resolveProvider(
+      config,
+      {
+        OPENAI_API_KEY: "openai",
+        EXA_API_KEY: "exa",
+      },
+      "exa",
+    )
+
+    expect(provider.id).toBe("exa")
+  })
+
   test("status list reflects missing and available credentials", () => {
     const statuses = listProviderStatuses(resolveConfig({}), {
       EXA_API_KEY: "exa",
@@ -36,6 +50,9 @@ describe("provider registry", () => {
     expect(() => getProviderById("unknown" as never)).toThrow("Unknown provider: unknown")
     expect(() => resolveProvider(resolveConfig({ provider: "openai" }), {})).toThrow(
       'Configured provider "openai" is unavailable. Expected one of: OPENAI_API_KEY',
+    )
+    expect(() => resolveProvider(resolveConfig({ provider: "exa" }), {}, "openai")).toThrow(
+      'Requested provider "openai" is unavailable. Expected one of: OPENAI_API_KEY',
     )
   })
 

@@ -13,6 +13,19 @@ export const providerIds = [
 
 export type ProviderId = (typeof providerIds)[number]
 
+export function isProviderId(value: unknown): value is ProviderId {
+  return (
+    value === "brave" ||
+    value === "exa" ||
+    value === "tavily" ||
+    value === "perplexity" ||
+    value === "parallel" ||
+    value === "gemini" ||
+    value === "openai" ||
+    value === "anthropic"
+  )
+}
+
 export type SearchResultItem = {
   title: string
   url: string

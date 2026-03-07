@@ -51,7 +51,20 @@ export function getProviderById(id: ProviderId): SearchProvider {
 export function resolveProvider(
   config: BetterSearchConfig,
   env: Record<string, string | undefined> = process.env,
+  requestedProvider?: ProviderId,
 ): SearchProvider {
+  if (requestedProvider) {
+    const explicitProvider = getProviderById(requestedProvider)
+
+    if (!explicitProvider.isAvailable(config, env)) {
+      throw new Error(
+        `Requested provider "${explicitProvider.id}" is unavailable. Expected one of: ${explicitProvider.envVars.join(", ")}`,
+      )
+    }
+
+    return explicitProvider
+  }
+
   if (config.provider !== "auto") {
     const explicitProvider = getProviderById(config.provider)
 

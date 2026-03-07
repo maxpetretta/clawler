@@ -2,10 +2,11 @@ import { SearchCache } from "./cache"
 import type { BetterSearchConfig } from "./config"
 import { formatSearchResult } from "./format"
 import { resolveProvider } from "./providers/registry"
-import type { SearchOptions } from "./providers/types"
+import { isProviderId, type ProviderId, providerIds, type SearchOptions } from "./providers/types"
 
 type BetterSearchToolParams = {
   query: string
+  provider?: ProviderId
   count?: number
   freshness?: string
   country?: string
@@ -26,6 +27,11 @@ export function createBetterSearchTool(config: BetterSearchConfig) {
       type: "object",
       properties: {
         query: { type: "string", description: "Search query string." },
+        provider: {
+          type: "string",
+          enum: [...providerIds],
+          description: "Optional provider override for this search call.",
+        },
         count: { type: "number", description: "Number of results to return (1-20).", minimum: 1, maximum: 20 },
         freshness: { type: "string", description: "Recency filter such as pd, pw, pm, py, or a date range." },
         country: { type: "string", description: "2-letter country code for region-specific results." },
@@ -51,8 +57,12 @@ export function createBetterSearchTool(config: BetterSearchConfig) {
         throw new Error("Query must not be empty.")
       }
 
+      if (params.provider !== undefined && !isProviderId(params.provider)) {
+        throw new Error(`Unknown provider: ${String(params.provider)}`)
+      }
+
       const env = process.env as Record<string, string | undefined>
-      const provider = resolveProvider(config, env)
+      const provider = resolveProvider(config, env, params.provider)
       const options = resolveSearchOptions(config, params)
       const cacheKey = buildCacheKey(provider.id, query, options)
       const cached = cache.get(cacheKey)

@@ -6,7 +6,7 @@ import { renderProviderStatus } from "./status"
 
 function registerClawlerCommands(program: unknown, config: ClawlerConfig): void {
   const root = program as CommandLike
-  const clawler = root.command("clawler").description("Crawl the web. Fast.")
+  const clawler = root.command("clawler").description("Better web search for your Claw.")
 
   clawler
     .command("setup")

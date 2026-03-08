@@ -1,8 +1,8 @@
-# Clawler
+# Clawler 🦞
 
 > Better web search for your Claw.
 
-🔎 A web search plugin for OpenClaw. Clawler replaces the builtin `web_search` path with a provider-agnostic tool that can route across traditional search APIs and model-native search backends through one consistent interface.
+A web search plugin for OpenClaw. Clawler replaces the builtin `web_search` path with a provider-agnostic tool that can route across traditional search APIs and model-native search backends through one consistent interface.
 
 ## Install
 
@@ -12,24 +12,6 @@ openclaw clawler setup
 ```
 
 `setup` selects a default provider, checks which credentials are available, optionally writes managed config into `~/.openclaw/openclaw.json`, and can deny the builtin `web_search` tool so your agent uses `search_web` instead.
-
-## How It Works
-
-```
-Agent calls `search_web(query, options)`
-                      ↓
-            Provider resolver chooses explicit, configured, or auto-detected provider
-                      ↓
-            Provider executes web search with shared filters and provider-specific settings
-                      ↓
-            If the request errors and fallback is configured, try the next provider
-                      ↓
-            Normalize answer, results, snippets, and citations into one response format
-                      ↓
-            Cache the successful result and return formatted output to the agent
-```
-
-Clawler keeps the surface area small: one tool, shared search options, and a provider registry that hides API differences behind a single response shape.
 
 ### Providers
 

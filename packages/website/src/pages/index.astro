@@ -3,41 +3,65 @@ import "@fontsource-variable/inter/standard.css"
 import "@fontsource-variable/inter/standard-italic.css"
 import "@/styles/global.css"
 
-const title = "Clawler | Every search engine. One claw."
+const title = "Clawler | Crawl the web. Fast."
 const description =
   "OpenClaw plugin that reaches across eight search providers — Brave, Exa, Tavily, OpenAI, Anthropic, Perplexity, Gemini, and Parallel — with a single tool."
 
 const providers = [
   {
-    id: "brave", label: "Brave", color: "#fb542b", type: "Fast links",
+    id: "brave",
+    label: "Brave",
+    color: "#fb542b",
+    type: "Fast links",
     desc: "Private, fast web search. Great for quick factual lookups and getting a list of relevant pages.",
   },
   {
-    id: "exa", label: "Exa", color: "#5b8df9", type: "Smart links",
+    id: "exa",
+    label: "Exa",
+    color: "#5b8df9",
+    type: "Smart links",
     desc: "Neural search that understands what you mean, not just what you typed. Finds the exact page you need.",
   },
   {
-    id: "tavily", label: "Tavily", color: "#0bc98c", type: "Research",
+    id: "tavily",
+    label: "Tavily",
+    color: "#0bc98c",
+    type: "Research",
     desc: "Research-grade search that returns an answer and the sources it used. Built for thorough lookups.",
   },
   {
-    id: "parallel", label: "Parallel", color: "#a78bfa", type: "Fast links",
+    id: "parallel",
+    label: "Parallel",
+    color: "#a78bfa",
+    type: "Fast links",
     desc: "Searches multiple sources at once and returns structured excerpts. Fast and comprehensive.",
   },
   {
-    id: "openai", label: "OpenAI", color: "#19c37d", type: "AI answer",
+    id: "openai",
+    label: "OpenAI",
+    color: "#19c37d",
+    type: "AI answer",
     desc: "Uses GPT to search the web and reason through results. Returns a full answer with cited sources.",
   },
   {
-    id: "anthropic", label: "Anthropic", color: "#d4a27f", type: "AI answer",
+    id: "anthropic",
+    label: "Anthropic",
+    color: "#d4a27f",
+    type: "AI answer",
     desc: "Claude searches the web for you. Deep research mode with citations and careful source evaluation.",
   },
   {
-    id: "perplexity", label: "Perplexity", color: "#22b8cf", type: "AI answer",
+    id: "perplexity",
+    label: "Perplexity",
+    color: "#22b8cf",
+    type: "AI answer",
     desc: "Real-time answers grounded in current web results. Great when you need up-to-the-minute information.",
   },
   {
-    id: "gemini", label: "Gemini", color: "#4285f4", type: "AI answer",
+    id: "gemini",
+    label: "Gemini",
+    color: "#4285f4",
+    type: "AI answer",
     desc: "Google-powered search with AI summaries. Taps into Google's index through the Gemini API.",
   },
 ]
@@ -45,16 +69,13 @@ const providers = [
 const installCmd = "openclaw plugin add clawler"
 
 function highlight(code: string) {
-  let html = code
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-  html = html.replace(/(\/\/.*)/g, '<span class=hl-comment>$1</span>')
-  html = html.replace(/(\$\s.*)/g, '<span class=hl-comment>$1</span>')
-  html = html.replace(/"([\w.$\-\/~*]+)"(\s*:)/g, '<span class=hl-key>"$1"</span>$2')
+  let html = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  html = html.replace(/(\/\/.*)/g, "<span class=hl-comment>$1</span>")
+  html = html.replace(/(\$\s.*)/g, "<span class=hl-comment>$1</span>")
+  html = html.replace(/"([\w.$\-/~*]+)"(\s*:)/g, '<span class=hl-key>"$1"</span>$2')
   html = html.replace(/"([^"]*?)"/g, '<span class=hl-string>"$1"</span>')
-  html = html.replace(/\b(true|false)\b/g, '<span class=hl-bool>$1</span>')
-  html = html.replace(/(:\s*)(\d+)/g, '$1<span class=hl-number>$2</span>')
+  html = html.replace(/\b(true|false)\b/g, "<span class=hl-bool>$1</span>")
+  html = html.replace(/(:\s*)(\d+)/g, "$1<span class=hl-number>$2</span>")
   return html
 }
 
@@ -74,6 +95,9 @@ const configCode = highlight(`{
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content="#08080a" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" />
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site ?? "https://clawler.dev")} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

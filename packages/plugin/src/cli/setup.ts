@@ -56,7 +56,7 @@ export async function runSetupWizard(
   config: ClawlerConfig,
   deps: SetupWizardDeps = defaultSetupWizardDeps,
 ): Promise<void> {
-  deps.prompts.intro("Clawler setup")
+  deps.prompts.intro("Clawler — Crawl the web. Fast.")
 
   const selectedProvider = await promptOrCancel<ClawlerProviderSelection>(
     deps.prompts,

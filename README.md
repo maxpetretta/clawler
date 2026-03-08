@@ -1,6 +1,6 @@
 # Clawler
 
-> Universal web search for OpenClaw.
+> Crawl the web. Fast.
 
 `clawler` is an OpenClaw plugin workspace focused on one job: replace the built-in `web_search` path with a provider-agnostic search tool that can route to traditional search APIs and model-native web search backends.
 

@@ -6,7 +6,7 @@ import { createClawlerTool } from "./tool"
 const clawlerPlugin: OpenClawPluginDefinition = {
   id: "clawler",
   name: "Clawler",
-  description: "Unified search providers for OpenClaw",
+  description: "Crawl the web. Fast.",
   kind: "tool",
   configSchema: clawlerConfigSchema,
   register(api: OpenClawPluginApi) {

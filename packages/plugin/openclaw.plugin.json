@@ -2,7 +2,9 @@
   "id": "clawler",
   "name": "Clawler",
   "kind": "tool",
-  "skills": ["./skills"],
+  "skills": [
+    "./skills"
+  ],
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -10,7 +12,35 @@
       "provider": {
         "type": "string",
         "default": "auto",
-        "enum": ["auto", "brave", "exa", "tavily", "perplexity", "parallel", "gemini", "openai", "anthropic"]
+        "enum": [
+          "auto",
+          "brave",
+          "exa",
+          "tavily",
+          "perplexity",
+          "parallel",
+          "gemini",
+          "openai",
+          "anthropic"
+        ]
+      },
+      "fallback": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "brave",
+            "exa",
+            "tavily",
+            "perplexity",
+            "parallel",
+            "gemini",
+            "openai",
+            "anthropic"
+          ]
+        },
+        "default": [],
+        "description": "Fallback providers tried in order if the primary fails. Only errors trigger fallback; empty results are valid. Per-call provider param skips fallback."
       },
       "toolName": {
         "type": "string",
@@ -75,7 +105,11 @@
           },
           "safesearch": {
             "type": "string",
-            "enum": ["off", "moderate", "strict"]
+            "enum": [
+              "off",
+              "moderate",
+              "strict"
+            ]
           }
         }
       },
@@ -89,11 +123,26 @@
           "type": {
             "type": "string",
             "default": "auto",
-            "enum": ["neural", "fast", "auto", "deep", "deep-reasoning", "instant"]
+            "enum": [
+              "neural",
+              "fast",
+              "auto",
+              "deep",
+              "deep-reasoning",
+              "instant"
+            ]
           },
           "category": {
             "type": "string",
-            "enum": ["company", "people", "research paper", "news", "tweet", "personal site", "financial report"]
+            "enum": [
+              "company",
+              "people",
+              "research paper",
+              "news",
+              "tweet",
+              "personal site",
+              "financial report"
+            ]
           },
           "maxAgeHours": {
             "type": "integer",
@@ -111,7 +160,12 @@
           "searchDepth": {
             "type": "string",
             "default": "advanced",
-            "enum": ["basic", "advanced", "fast", "ultra-fast"]
+            "enum": [
+              "basic",
+              "advanced",
+              "fast",
+              "ultra-fast"
+            ]
           },
           "includeAnswer": {
             "oneOf": [
@@ -120,7 +174,10 @@
               },
               {
                 "type": "string",
-                "enum": ["basic", "advanced"]
+                "enum": [
+                  "basic",
+                  "advanced"
+                ]
               }
             ],
             "default": true
@@ -153,7 +210,10 @@
           "apiMode": {
             "type": "string",
             "default": "search",
-            "enum": ["search", "chat"]
+            "enum": [
+              "search",
+              "chat"
+            ]
           },
           "baseUrl": {
             "type": "string",
@@ -162,6 +222,20 @@
           "model": {
             "type": "string",
             "default": "sonar-pro"
+          },
+          "maxTokens": {
+            "type": "integer",
+            "default": 4000,
+            "minimum": 1,
+            "maximum": 1000000,
+            "description": "Maximum total tokens for search context (API default: 10000)"
+          },
+          "maxTokensPerPage": {
+            "type": "integer",
+            "default": 2000,
+            "minimum": 1,
+            "maximum": 1000000,
+            "description": "Maximum tokens per page snippet (API default: 4096)"
           }
         }
       },
@@ -174,13 +248,21 @@
           },
           "mode": {
             "type": "string",
-            "default": "fast",
-            "enum": ["fast", "standard"]
+            "default": "one-shot"
           },
           "maxCharsPerResult": {
             "type": "number",
-            "default": 1500,
+            "default": 5000,
             "minimum": 100
+          },
+          "maxCharsTotal": {
+            "type": "number",
+            "default": 50000,
+            "minimum": 100
+          },
+          "maxAgeSeconds": {
+            "type": "number",
+            "minimum": 1
           }
         }
       },
@@ -194,6 +276,11 @@
           "model": {
             "type": "string",
             "default": "gemini-2.5-flash"
+          },
+          "dynamicThreshold": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
           }
         }
       },
@@ -207,7 +294,11 @@
           "apiMode": {
             "type": "string",
             "default": "auto",
-            "enum": ["auto", "responses", "chat_completions_search"]
+            "enum": [
+              "auto",
+              "responses",
+              "chat_completions_search"
+            ]
           },
           "model": {
             "type": "string",
@@ -220,12 +311,20 @@
           "reasoningEffort": {
             "type": "string",
             "default": "low",
-            "enum": ["low", "medium", "high"]
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
           },
           "searchContextSize": {
             "type": "string",
             "default": "medium",
-            "enum": ["low", "medium", "high"]
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
           },
           "includeSources": {
             "type": "boolean",
@@ -234,6 +333,15 @@
           "externalWebAccess": {
             "type": "boolean",
             "default": true
+          },
+          "city": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
           }
         }
       },
@@ -251,7 +359,15 @@
           "toolVersion": {
             "type": "string",
             "default": "web_search_20260209",
-            "enum": ["web_search_20250305", "web_search_20260209"]
+            "enum": [
+              "web_search_20250305",
+              "web_search_20260209"
+            ]
+          },
+          "maxTokens": {
+            "type": "number",
+            "default": 4096,
+            "minimum": 1
           },
           "maxUses": {
             "type": "number",
@@ -261,6 +377,15 @@
           "directOnly": {
             "type": "boolean",
             "default": true
+          },
+          "city": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
           }
         }
       }

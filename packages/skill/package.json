@@ -14,5 +14,8 @@
     "skill": {
       "entry": "clawler/SKILL.md"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

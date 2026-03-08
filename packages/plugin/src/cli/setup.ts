@@ -25,14 +25,14 @@ type SetupWizardDeps = {
 const SETUP_CANCELLED_MESSAGE = "Setup cancelled."
 const PROVIDER_OPTIONS = [
   { value: "auto", label: "Auto detect", hint: "Use the first available provider key" },
-  { value: "exa", label: "Exa", hint: "Neural search API" },
-  { value: "tavily", label: "Tavily", hint: "Agent search API" },
+  { value: "anthropic", label: "Anthropic", hint: "Messages API web search" },
   { value: "brave", label: "Brave", hint: "Traditional search index" },
+  { value: "exa", label: "Exa", hint: "Neural search API" },
+  { value: "gemini", label: "Gemini", hint: "Google grounding" },
+  { value: "openai", label: "OpenAI", hint: "Responses API web search" },
   { value: "parallel", label: "Parallel", hint: "Search and extraction API" },
   { value: "perplexity", label: "Perplexity", hint: "LLM-native search" },
-  { value: "openai", label: "OpenAI", hint: "Responses API web search" },
-  { value: "anthropic", label: "Anthropic", hint: "Messages API web search" },
-  { value: "gemini", label: "Gemini", hint: "Google grounding" },
+  { value: "tavily", label: "Tavily", hint: "Agent search API" },
 ] as const
 
 const defaultSetupWizardDeps: SetupWizardDeps = {

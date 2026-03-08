@@ -1,28 +1,28 @@
 import type { ClawlerConfig } from "../config"
 
 export const providerIds = [
+  "anthropic",
   "brave",
   "exa",
-  "tavily",
-  "perplexity",
-  "parallel",
   "gemini",
   "openai",
-  "anthropic",
+  "parallel",
+  "perplexity",
+  "tavily",
 ] as const
 
 export type ProviderId = (typeof providerIds)[number]
 
 export function isProviderId(value: unknown): value is ProviderId {
   return (
+    value === "anthropic" ||
     value === "brave" ||
     value === "exa" ||
-    value === "tavily" ||
-    value === "perplexity" ||
-    value === "parallel" ||
     value === "gemini" ||
     value === "openai" ||
-    value === "anthropic"
+    value === "parallel" ||
+    value === "perplexity" ||
+    value === "tavily"
   )
 }
 

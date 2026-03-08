@@ -11,14 +11,14 @@ import { tavilyProvider } from "./tavily"
 import type { ProviderId, ProviderStatus, SearchProvider } from "./types"
 
 export const providersInPriorityOrder = [
-  perplexityProvider,
-  exaProvider,
-  tavilyProvider,
-  parallelProvider,
-  braveProvider,
-  openaiProvider,
   anthropicProvider,
+  braveProvider,
+  exaProvider,
   geminiProvider,
+  openaiProvider,
+  parallelProvider,
+  perplexityProvider,
+  tavilyProvider,
 ] as const satisfies readonly SearchProvider[]
 
 export function listProviderStatuses(

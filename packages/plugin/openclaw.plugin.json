@@ -14,14 +14,14 @@
         "default": "auto",
         "enum": [
           "auto",
+          "anthropic",
           "brave",
           "exa",
-          "tavily",
-          "perplexity",
-          "parallel",
           "gemini",
           "openai",
-          "anthropic"
+          "parallel",
+          "perplexity",
+          "tavily"
         ]
       },
       "fallback": {
@@ -29,14 +29,14 @@
         "items": {
           "type": "string",
           "enum": [
+            "anthropic",
             "brave",
             "exa",
-            "tavily",
-            "perplexity",
-            "parallel",
             "gemini",
             "openai",
-            "anthropic"
+            "parallel",
+            "perplexity",
+            "tavily"
           ]
         },
         "default": [],

@@ -5,9 +5,16 @@ import "@/styles/global.css"
 
 const title = "Clawler | Crawl the web. Fast."
 const description =
-  "OpenClaw plugin that reaches across eight search providers — Brave, Exa, Tavily, OpenAI, Anthropic, Perplexity, Gemini, and Parallel — with a single tool."
+  "OpenClaw plugin that reaches across eight search providers — Anthropic, Brave, Exa, Gemini, OpenAI, Parallel, Perplexity, and Tavily — with a single tool."
 
 const providers = [
+  {
+    id: "anthropic",
+    label: "Anthropic",
+    color: "#d4a27f",
+    type: "AI answer",
+    desc: "Claude searches the web for you. Deep research mode with citations and careful source evaluation.",
+  },
   {
     id: "brave",
     label: "Brave",
@@ -23,18 +30,11 @@ const providers = [
     desc: "Neural search that understands what you mean, not just what you typed. Finds the exact page you need.",
   },
   {
-    id: "tavily",
-    label: "Tavily",
-    color: "#0bc98c",
-    type: "Research",
-    desc: "Research-grade search that returns an answer and the sources it used. Built for thorough lookups.",
-  },
-  {
-    id: "parallel",
-    label: "Parallel",
-    color: "#a78bfa",
-    type: "Fast links",
-    desc: "Searches multiple sources at once and returns structured excerpts. Fast and comprehensive.",
+    id: "gemini",
+    label: "Gemini",
+    color: "#4285f4",
+    type: "AI answer",
+    desc: "Google-powered search with AI summaries. Taps into Google's index through the Gemini API.",
   },
   {
     id: "openai",
@@ -44,11 +44,11 @@ const providers = [
     desc: "Uses GPT to search the web and reason through results. Returns a full answer with cited sources.",
   },
   {
-    id: "anthropic",
-    label: "Anthropic",
-    color: "#d4a27f",
-    type: "AI answer",
-    desc: "Claude searches the web for you. Deep research mode with citations and careful source evaluation.",
+    id: "parallel",
+    label: "Parallel",
+    color: "#a78bfa",
+    type: "Fast links",
+    desc: "Searches multiple sources at once and returns structured excerpts. Fast and comprehensive.",
   },
   {
     id: "perplexity",
@@ -58,11 +58,11 @@ const providers = [
     desc: "Real-time answers grounded in current web results. Great when you need up-to-the-minute information.",
   },
   {
-    id: "gemini",
-    label: "Gemini",
-    color: "#4285f4",
-    type: "AI answer",
-    desc: "Google-powered search with AI summaries. Taps into Google's index through the Gemini API.",
+    id: "tavily",
+    label: "Tavily",
+    color: "#0bc98c",
+    type: "Research",
+    desc: "Research-grade search that returns an answer and the sources it used. Built for thorough lookups.",
   },
 ]
 
@@ -339,7 +339,7 @@ const configCode = highlight(`{
                 </ol>
                 <p>
                   Traditional search providers (Brave, Exa, Parallel) return a list of links with snippets.
-                  AI-powered providers (OpenAI, Anthropic, Perplexity, Gemini) return a written answer with citations.
+                  AI-powered providers (Anthropic, Gemini, OpenAI, Perplexity) return a written answer with citations.
                   Tavily does both. Clawler normalizes all of these into one format.
                 </p>
               </div>

@@ -10,7 +10,7 @@ describe("provider registry", () => {
       BRAVE_API_KEY: "brave",
     })
 
-    expect(provider.id).toBe("tavily")
+    expect(provider.id).toBe("brave")
   })
 
   test("explicit provider selection is respected", () => {

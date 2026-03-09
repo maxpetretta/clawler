@@ -1,14 +1,7 @@
 import type { ClawlerConfig } from "../config"
 import { parseFreshness } from "./freshness"
-import {
-  asSearchResultItem,
-  buildQueryWithDomainFilters,
-  hasApiKey,
-  providerEnvVars,
-  requestJson,
-  requireApiKey,
-} from "./shared"
-import type { SearchOptions, SearchProvider } from "./types"
+import { asSearchResultItem, buildQueryWithDomainFilters, defineProvider, requestJson, requireApiKey } from "./shared"
+import type { SearchOptions } from "./types"
 
 type BraveResponse = {
   web?: {
@@ -94,46 +87,37 @@ function buildBraveRichRequest(callbackKey: string, apiKey: string, timeoutSecon
   }
 }
 
-export const braveProvider: SearchProvider = {
-  id: "brave",
-  name: "Brave",
-  envVars: providerEnvVars("brave"),
-  category: "traditional",
-  isAvailable(config, env = process.env) {
-    return hasApiKey(config, "brave", env)
-  },
-  async search(query, options, context) {
-    const apiKey = requireApiKey(context.config, "brave", context.env)
-    const request = buildBraveRequest(query, options, apiKey, context.config.timeoutSeconds, context.config.brave)
-    const response = await requestJson<BraveResponse>("brave", request.url, context, request)
-    let richData: BraveRichResponse | undefined
+export const braveProvider = defineProvider("brave", "traditional", async (query, options, context) => {
+  const apiKey = requireApiKey(context.config, "brave", context.env)
+  const request = buildBraveRequest(query, options, apiKey, context.config.timeoutSeconds, context.config.brave)
+  const response = await requestJson<BraveResponse>("brave", request.url, context, request)
+  let richData: BraveRichResponse | undefined
 
-    if (context.config.brave.enableRichResults) {
-      const callbackKey = response.rich?.hint?.callback_key
+  if (context.config.brave.enableRichResults) {
+    const callbackKey = response.rich?.hint?.callback_key
 
-      if (callbackKey) {
-        const richRequest = buildBraveRichRequest(callbackKey, apiKey, context.config.timeoutSeconds)
-        richData = await requestJson<BraveRichResponse>("brave", richRequest.url, context, richRequest)
-      }
+    if (callbackKey) {
+      const richRequest = buildBraveRichRequest(callbackKey, apiKey, context.config.timeoutSeconds)
+      richData = await requestJson<BraveRichResponse>("brave", richRequest.url, context, richRequest)
     }
+  }
 
-    const results =
-      response.web?.results
-        ?.filter((entry) => Boolean(entry.url))
-        .map((entry) =>
-          asSearchResultItem({
-            title: entry.title ?? entry.url ?? "Untitled result",
-            url: entry.url ?? "",
-            snippet: [entry.description, ...(entry.extra_snippets ?? [])].filter(Boolean).join(" "),
-            publishedDate: entry.age,
-          }),
-        ) ?? []
+  const results =
+    response.web?.results
+      ?.filter((entry) => Boolean(entry.url))
+      .map((entry) =>
+        asSearchResultItem({
+          title: entry.title ?? entry.url ?? "Untitled result",
+          url: entry.url ?? "",
+          snippet: [entry.description, ...(entry.extra_snippets ?? [])].filter(Boolean).join(" "),
+          publishedDate: entry.age,
+        }),
+      ) ?? []
 
-    return {
-      provider: "brave",
-      query,
-      results,
-      ...(richData ? { meta: { rich: richData } } : {}),
-    }
-  },
-}
+  return {
+    provider: "brave",
+    query,
+    results,
+    ...(richData ? { meta: { rich: richData } } : {}),
+  }
+})

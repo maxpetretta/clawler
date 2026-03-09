@@ -3,13 +3,12 @@ import { parseFreshness, toUsDate } from "./freshness"
 import {
   buildPromptWithGuidance,
   dedupeStrings,
-  hasApiKey,
+  defineProvider,
   normalizeDomains,
-  providerEnvVars,
   requestJson,
   requireApiKey,
 } from "./shared"
-import type { SearchOptions, SearchProvider } from "./types"
+import type { SearchOptions } from "./types"
 
 type PerplexitySearchResult = {
   title?: string
@@ -149,45 +148,36 @@ function buildSearchDomainFilter(
   includeDomains: string[] | undefined,
   excludeDomains: string[] | undefined,
 ): string[] | undefined {
-  if (!includeDomains && !excludeDomains) {
+  if (!(includeDomains || excludeDomains)) {
     return undefined
   }
 
-  return [...(includeDomains ?? []), ...((excludeDomains ?? []).map((domain) => `-${domain}`))]
+  return [...(includeDomains ?? []), ...(excludeDomains ?? []).map((domain) => `-${domain}`)]
 }
 
-export const perplexityProvider: SearchProvider = {
-  id: "perplexity",
-  name: "Perplexity",
-  envVars: providerEnvVars("perplexity"),
-  category: "llm",
-  isAvailable(config, env = process.env) {
-    return hasApiKey(config, "perplexity", env)
-  },
-  async search(query, options, context) {
-    const apiKey = requireApiKey(context.config, "perplexity", context.env)
-    const viaOpenRouter =
-      !(context.config.perplexity.apiKey || context.env.PERPLEXITY_API_KEY) && Boolean(context.env.OPENROUTER_API_KEY)
-    const baseUrl = viaOpenRouter ? "https://openrouter.ai/api/v1" : context.config.perplexity.baseUrl
-    const request = buildPerplexityRequest(query, options, {
-      ...context.config.perplexity,
-      apiKey,
-      baseUrl,
-      timeoutSeconds: context.config.timeoutSeconds,
-      viaOpenRouter,
-    })
-    const response = await requestJson<PerplexityResponse>("perplexity", request.url, context, request)
-    const results = normalizePerplexityResults(response.results ?? response.search_results)
+export const perplexityProvider = defineProvider("perplexity", "llm", async (query, options, context) => {
+  const apiKey = requireApiKey(context.config, "perplexity", context.env)
+  const viaOpenRouter =
+    !(context.config.perplexity.apiKey || context.env.PERPLEXITY_API_KEY) && Boolean(context.env.OPENROUTER_API_KEY)
+  const baseUrl = viaOpenRouter ? "https://openrouter.ai/api/v1" : context.config.perplexity.baseUrl
+  const request = buildPerplexityRequest(query, options, {
+    ...context.config.perplexity,
+    apiKey,
+    baseUrl,
+    timeoutSeconds: context.config.timeoutSeconds,
+    viaOpenRouter,
+  })
+  const response = await requestJson<PerplexityResponse>("perplexity", request.url, context, request)
+  const results = normalizePerplexityResults(response.results ?? response.search_results)
 
-    return {
-      provider: "perplexity",
-      query,
-      answer: response.choices?.[0]?.message?.content?.trim(),
-      citations: dedupeStrings(response.citations ?? results?.map((entry) => entry.url)),
-      results,
-    }
-  },
-}
+  return {
+    provider: "perplexity",
+    query,
+    answer: response.choices?.[0]?.message?.content?.trim(),
+    citations: dedupeStrings(response.citations ?? results?.map((entry) => entry.url)),
+    results,
+  }
+})
 
 function normalizePerplexityResults(results: PerplexitySearchResult[] | undefined) {
   return results?.flatMap((entry) => {

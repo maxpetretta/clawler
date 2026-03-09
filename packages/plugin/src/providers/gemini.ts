@@ -1,6 +1,6 @@
 import type { ClawlerConfig } from "../config"
-import { buildPromptWithGuidance, dedupeStrings, hasApiKey, providerEnvVars, requestJson, requireApiKey } from "./shared"
-import type { SearchOptions, SearchProvider } from "./types"
+import { buildPromptWithGuidance, dedupeStrings, defineProvider, requestJson, requireApiKey } from "./shared"
+import type { SearchOptions } from "./types"
 
 type GeminiGroundingMetadata = {
   groundingChunks?: Array<{
@@ -82,43 +82,34 @@ export function buildGeminiRequest(query: string, options: SearchOptions, config
   }
 }
 
-export const geminiProvider: SearchProvider = {
-  id: "gemini",
-  name: "Gemini",
-  envVars: providerEnvVars("gemini"),
-  category: "llm",
-  isAvailable(config, env = process.env) {
-    return hasApiKey(config, "gemini", env)
-  },
-  async search(query, options, context) {
-    const apiKey = requireApiKey(context.config, "gemini", context.env)
-    const request = buildGeminiRequest(query, options, {
-      ...context.config.gemini,
-      apiKey,
-      timeoutSeconds: context.config.timeoutSeconds,
-    })
-    const response = await requestJson<GeminiResponse>("gemini", request.url, context, request)
-    const candidate = response.candidates?.[0]
-    const groundingMetadata = candidate?.groundingMetadata
-    const answer = candidate?.content?.parts
-      ?.map((part) => part.text)
-      .filter(Boolean)
-      .join("\n")
-      .trim()
-    const citations = buildGeminiCitations(groundingMetadata)
-    const webSearchQueries = dedupeStrings(groundingMetadata?.webSearchQueries)
+export const geminiProvider = defineProvider("gemini", "llm", async (query, options, context) => {
+  const apiKey = requireApiKey(context.config, "gemini", context.env)
+  const request = buildGeminiRequest(query, options, {
+    ...context.config.gemini,
+    apiKey,
+    timeoutSeconds: context.config.timeoutSeconds,
+  })
+  const response = await requestJson<GeminiResponse>("gemini", request.url, context, request)
+  const candidate = response.candidates?.[0]
+  const groundingMetadata = candidate?.groundingMetadata
+  const answer = candidate?.content?.parts
+    ?.map((part) => part.text)
+    .filter(Boolean)
+    .join("\n")
+    .trim()
+  const citations = buildGeminiCitations(groundingMetadata)
+  const webSearchQueries = dedupeStrings(groundingMetadata?.webSearchQueries)
 
-    return {
-      provider: "gemini",
-      query,
-      answer,
-      citations,
-      meta: {
-        webSearchQueries,
-      },
-    }
-  },
-}
+  return {
+    provider: "gemini",
+    query,
+    answer,
+    citations,
+    meta: {
+      webSearchQueries,
+    },
+  }
+})
 
 function buildGeminiCitations(groundingMetadata: GeminiGroundingMetadata | undefined): string[] {
   const structuredUrls = extractStructuredGroundingUrls(groundingMetadata)

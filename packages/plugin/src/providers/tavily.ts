@@ -2,14 +2,13 @@ import type { ClawlerConfig } from "../config"
 import { parseFreshness } from "./freshness"
 import {
   asSearchResultItem,
-  hasApiKey,
+  defineProvider,
   isoCountryName,
   normalizeDomains,
-  providerEnvVars,
   requestJson,
   requireApiKey,
 } from "./shared"
-import type { SearchOptions, SearchProvider } from "./types"
+import type { SearchOptions } from "./types"
 
 type TavilyResponse = {
   answer?: string
@@ -114,40 +113,31 @@ export function buildTavilyRequest(query: string, options: SearchOptions, config
   }
 }
 
-export const tavilyProvider: SearchProvider = {
-  id: "tavily",
-  name: "Tavily",
-  envVars: providerEnvVars("tavily"),
-  category: "hybrid",
-  isAvailable(config, env = process.env) {
-    return hasApiKey(config, "tavily", env)
-  },
-  async search(query, options, context) {
-    const apiKey = requireApiKey(context.config, "tavily", context.env)
-    const request = buildTavilyRequest(query, options, {
-      ...context.config.tavily,
-      apiKey,
-      timeoutSeconds: context.config.timeoutSeconds,
-    })
-    const response = await requestJson<TavilyResponse>("tavily", request.url, context, request)
-    const results =
-      response.results
-        ?.filter((entry) => Boolean(entry.url))
-        .map((entry) =>
-          asSearchResultItem({
-            title: entry.title ?? entry.url ?? "Untitled result",
-            url: entry.url ?? "",
-            snippet: entry.content ?? "",
-            publishedDate: entry.published_date,
-          }),
-        ) ?? []
+export const tavilyProvider = defineProvider("tavily", "hybrid", async (query, options, context) => {
+  const apiKey = requireApiKey(context.config, "tavily", context.env)
+  const request = buildTavilyRequest(query, options, {
+    ...context.config.tavily,
+    apiKey,
+    timeoutSeconds: context.config.timeoutSeconds,
+  })
+  const response = await requestJson<TavilyResponse>("tavily", request.url, context, request)
+  const results =
+    response.results
+      ?.filter((entry) => Boolean(entry.url))
+      .map((entry) =>
+        asSearchResultItem({
+          title: entry.title ?? entry.url ?? "Untitled result",
+          url: entry.url ?? "",
+          snippet: entry.content ?? "",
+          publishedDate: entry.published_date,
+        }),
+      ) ?? []
 
-    return {
-      provider: "tavily",
-      query,
-      answer: response.answer,
-      citations: results.map((entry) => entry.url),
-      results,
-    }
-  },
-}
+  return {
+    provider: "tavily",
+    query,
+    answer: response.answer,
+    citations: results.map((entry) => entry.url),
+    results,
+  }
+})

@@ -3,13 +3,12 @@ import {
   buildApproximateUserLocation,
   buildPromptWithGuidance,
   dedupeStrings,
-  providerEnvVars,
-  hasApiKey,
+  defineProvider,
   normalizeDomains,
   requestJson,
   requireApiKey,
 } from "./shared"
-import type { SearchOptions, SearchProvider } from "./types"
+import type { SearchOptions, SearchProviderContext } from "./types"
 
 type AnthropicCitation = {
   type?: string
@@ -106,42 +105,33 @@ export function buildAnthropicRequest(query: string, options: SearchOptions, con
   }
 }
 
-export const anthropicProvider: SearchProvider = {
-  id: "anthropic",
-  name: "Anthropic",
-  envVars: providerEnvVars("anthropic"),
-  category: "llm",
-  isAvailable(config, env = process.env) {
-    return hasApiKey(config, "anthropic", env)
-  },
-  async search(query, options, context) {
-    const apiKey = requireApiKey(context.config, "anthropic", context.env)
-    const request = buildAnthropicRequest(query, options, {
-      ...context.config.anthropic,
-      apiKey,
-      timeoutSeconds: context.config.timeoutSeconds,
-    })
-    const response = await runAnthropicRequest(request, context)
-    const textBlocks = response.content?.filter(isAnthropicTextBlock) ?? []
-    const answer = textBlocks
-      .map((block) => block.text)
-      .filter(Boolean)
-      .join("\n")
-      .trim()
-    const citations = collectAnthropicCitationUrls(response.content)
+export const anthropicProvider = defineProvider("anthropic", "llm", async (query, options, context) => {
+  const apiKey = requireApiKey(context.config, "anthropic", context.env)
+  const request = buildAnthropicRequest(query, options, {
+    ...context.config.anthropic,
+    apiKey,
+    timeoutSeconds: context.config.timeoutSeconds,
+  })
+  const response = await runAnthropicRequest(request, context)
+  const textBlocks = response.content?.filter(isAnthropicTextBlock) ?? []
+  const answer = textBlocks
+    .map((block) => block.text)
+    .filter(Boolean)
+    .join("\n")
+    .trim()
+  const citations = collectAnthropicCitationUrls(response.content)
 
-    return {
-      provider: "anthropic",
-      query,
-      answer,
-      citations,
-    }
-  },
-}
+  return {
+    provider: "anthropic",
+    query,
+    answer,
+    citations,
+  }
+})
 
 async function runAnthropicRequest(
   request: ReturnType<typeof buildAnthropicRequest>,
-  context: Parameters<SearchProvider["search"]>[2],
+  context: SearchProviderContext,
 ): Promise<AnthropicResponse> {
   const responses: AnthropicResponse[] = []
   const originalMessages = ((request.body as { messages?: unknown[] }).messages ?? []).slice()
@@ -188,9 +178,7 @@ function isAnthropicTextBlock(block: AnthropicContentBlock): block is AnthropicT
   return block.type === "text"
 }
 
-function isAnthropicWebSearchToolResultBlock(
-  block: AnthropicContentBlock,
-): block is AnthropicWebSearchToolResultBlock {
+function isAnthropicWebSearchToolResultBlock(block: AnthropicContentBlock): block is AnthropicWebSearchToolResultBlock {
   return block.type === "web_search_tool_result"
 }
 
@@ -203,7 +191,7 @@ function collectAnthropicCitationUrls(content: AnthropicContentBlock[] | undefin
       continue
     }
 
-    if (!isAnthropicWebSearchToolResultBlock(block) || !Array.isArray(block.content)) {
+    if (!(isAnthropicWebSearchToolResultBlock(block) && Array.isArray(block.content))) {
       continue
     }
 

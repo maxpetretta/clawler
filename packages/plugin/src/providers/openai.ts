@@ -3,13 +3,12 @@ import {
   buildApproximateUserLocation,
   buildPromptWithGuidance,
   dedupeUrlCitations,
-  providerEnvVars,
-  hasApiKey,
+  defineProvider,
   normalizeDomains,
   requestJson,
   requireApiKey,
 } from "./shared"
-import type { SearchOptions, SearchProvider } from "./types"
+import type { SearchOptions } from "./types"
 
 type OpenAICitation = {
   url?: string
@@ -131,61 +130,52 @@ export function buildOpenAIChatCompletionsRequest(query: string, options: Search
   }
 }
 
-export const openaiProvider: SearchProvider = {
-  id: "openai",
-  name: "OpenAI",
-  envVars: providerEnvVars("openai"),
-  category: "llm",
-  isAvailable(config, env = process.env) {
-    return hasApiKey(config, "openai", env)
-  },
-  async search(query, options, context) {
-    const apiKey = requireApiKey(context.config, "openai", context.env)
-    const requestConfig = {
-      ...context.config.openai,
-      apiKey,
-      timeoutSeconds: context.config.timeoutSeconds,
-    }
+export const openaiProvider = defineProvider("openai", "llm", async (query, options, context) => {
+  const apiKey = requireApiKey(context.config, "openai", context.env)
+  const requestConfig = {
+    ...context.config.openai,
+    apiKey,
+    timeoutSeconds: context.config.timeoutSeconds,
+  }
 
-    if (shouldUseOpenAIChatCompletions(options, context.config.openai.apiMode)) {
-      const request = buildOpenAIChatCompletionsRequest(query, options, requestConfig)
-      const response = await requestJson<OpenAIChatCompletionsResponse>("openai", request.url, context, request)
-      const message = response.choices?.[0]?.message
-
-      return {
-        provider: "openai",
-        query,
-        answer: message?.content?.trim(),
-        citations: dedupeUrlCitations(message?.annotations?.map((annotation) => annotation.url_citation) ?? []),
-      }
-    }
-
-    const request = buildOpenAIResponsesRequest(query, options, requestConfig)
-    const response = await requestJson<OpenAIResponse>("openai", request.url, context, request)
-    const messageParts =
-      response.output?.filter((item) => item.type === "message").flatMap((item) => item.content ?? []) ?? []
-    const answer =
-      response.output_text ??
-      messageParts
-        .map((part) => part.text)
-        .filter(Boolean)
-        .join("\n")
-        .trim()
-    const citations = dedupeUrlCitations([
-      ...messageParts.flatMap((part) => part.annotations ?? []),
-      ...(response.output
-        ?.filter((item) => item.type === "web_search_call")
-        .flatMap((item) => item.action?.sources?.map((source) => ({ url: source.url })) ?? []) ?? []),
-    ])
+  if (shouldUseOpenAIChatCompletions(options, context.config.openai.apiMode)) {
+    const request = buildOpenAIChatCompletionsRequest(query, options, requestConfig)
+    const response = await requestJson<OpenAIChatCompletionsResponse>("openai", request.url, context, request)
+    const message = response.choices?.[0]?.message
 
     return {
       provider: "openai",
       query,
-      answer,
-      citations,
+      answer: message?.content?.trim(),
+      citations: dedupeUrlCitations(message?.annotations?.map((annotation) => annotation.url_citation) ?? []),
     }
-  },
-}
+  }
+
+  const request = buildOpenAIResponsesRequest(query, options, requestConfig)
+  const response = await requestJson<OpenAIResponse>("openai", request.url, context, request)
+  const messageParts =
+    response.output?.filter((item) => item.type === "message").flatMap((item) => item.content ?? []) ?? []
+  const answer =
+    response.output_text ??
+    messageParts
+      .map((part) => part.text)
+      .filter(Boolean)
+      .join("\n")
+      .trim()
+  const citations = dedupeUrlCitations([
+    ...messageParts.flatMap((part) => part.annotations ?? []),
+    ...(response.output
+      ?.filter((item) => item.type === "web_search_call")
+      .flatMap((item) => item.action?.sources?.map((source) => ({ url: source.url })) ?? []) ?? []),
+  ])
+
+  return {
+    provider: "openai",
+    query,
+    answer,
+    citations,
+  }
+})
 
 export function shouldUseOpenAIChatCompletions(
   options: SearchOptions,

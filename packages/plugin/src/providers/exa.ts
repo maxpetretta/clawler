@@ -1,7 +1,7 @@
 import type { ExaCategory } from "../config"
 import { parseFreshness, toIsoDateEnd, toIsoDateStart } from "./freshness"
-import { asSearchResultItem, hasApiKey, normalizeDomains, providerEnvVars, requestJson, requireApiKey } from "./shared"
-import type { SearchOptions, SearchProvider } from "./types"
+import { asSearchResultItem, defineProvider, normalizeDomains, requestJson, requireApiKey } from "./shared"
+import type { SearchOptions } from "./types"
 
 const DEFAULT_EXA_HIGHLIGHT_MAX_CHARACTERS = 4000
 
@@ -98,40 +98,31 @@ export function buildExaRequest(query: string, options: SearchOptions, config: E
   }
 }
 
-export const exaProvider: SearchProvider = {
-  id: "exa",
-  name: "Exa",
-  envVars: providerEnvVars("exa"),
-  category: "traditional",
-  isAvailable(config, env = process.env) {
-    return hasApiKey(config, "exa", env)
-  },
-  async search(query, options, context) {
-    const apiKey = requireApiKey(context.config, "exa", context.env)
-    const request = buildExaRequest(query, options, {
-      apiKey,
-      type: context.config.exa.type,
-      category: context.config.exa.category,
-      maxAgeHours: context.config.exa.maxAgeHours,
-      timeoutSeconds: context.config.timeoutSeconds,
-    })
-    const response = await requestJson<ExaResponse>("exa", request.url, context, request)
-    const results =
-      response.results
-        ?.filter((entry) => Boolean(entry.url))
-        .map((entry) =>
-          asSearchResultItem({
-            title: entry.title ?? entry.url ?? "Untitled result",
-            url: entry.url ?? "",
-            snippet: entry.highlights?.join(" ") ?? entry.summary ?? entry.text ?? "",
-            publishedDate: entry.publishedDate,
-          }),
-        ) ?? []
+export const exaProvider = defineProvider("exa", "traditional", async (query, options, context) => {
+  const apiKey = requireApiKey(context.config, "exa", context.env)
+  const request = buildExaRequest(query, options, {
+    apiKey,
+    type: context.config.exa.type,
+    category: context.config.exa.category,
+    maxAgeHours: context.config.exa.maxAgeHours,
+    timeoutSeconds: context.config.timeoutSeconds,
+  })
+  const response = await requestJson<ExaResponse>("exa", request.url, context, request)
+  const results =
+    response.results
+      ?.filter((entry) => Boolean(entry.url))
+      .map((entry) =>
+        asSearchResultItem({
+          title: entry.title ?? entry.url ?? "Untitled result",
+          url: entry.url ?? "",
+          snippet: entry.highlights?.join(" ") ?? entry.summary ?? entry.text ?? "",
+          publishedDate: entry.publishedDate,
+        }),
+      ) ?? []
 
-    return {
-      provider: "exa",
-      query,
-      results,
-    }
-  },
-}
+  return {
+    provider: "exa",
+    query,
+    results,
+  }
+})

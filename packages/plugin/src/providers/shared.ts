@@ -1,7 +1,7 @@
 import type { ClawlerConfig } from "../config"
 import { fetchJson, type JsonRequest } from "../http"
 import { describeFreshness } from "./freshness"
-import type { ProviderId, SearchOptions, SearchProviderContext, SearchResultItem } from "./types"
+import type { ProviderId, SearchOptions, SearchProvider, SearchProviderContext, SearchResultItem } from "./types"
 
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" })
 
@@ -281,4 +281,21 @@ export function asSearchResultItem(item: SearchResultItem): SearchResultItem {
 
 function readProviderApiKey(config: ClawlerConfig, providerId: ProviderId): string | undefined {
   return config[providerId].apiKey
+}
+
+export function defineProvider(
+  id: ProviderId,
+  category: SearchProvider["category"],
+  search: SearchProvider["search"],
+): SearchProvider {
+  return {
+    id,
+    name: providerNames[id],
+    envVars: providerEnvVarMap[id],
+    category,
+    isAvailable(config, env = process.env) {
+      return hasApiKey(config, id, env)
+    },
+    search,
+  }
 }

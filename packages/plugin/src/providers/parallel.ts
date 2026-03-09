@@ -3,13 +3,12 @@ import { parseFreshness } from "./freshness"
 import {
   asSearchResultItem,
   buildPromptWithGuidance,
-  hasApiKey,
+  defineProvider,
   normalizeDomains,
-  providerEnvVars,
   requestJson,
   requireApiKey,
 } from "./shared"
-import type { SearchOptions, SearchProvider } from "./types"
+import type { SearchOptions } from "./types"
 
 type ParallelResponse = {
   results?: Array<{
@@ -82,38 +81,29 @@ export function buildParallelRequest(query: string, options: SearchOptions, conf
   }
 }
 
-export const parallelProvider: SearchProvider = {
-  id: "parallel",
-  name: "Parallel",
-  envVars: providerEnvVars("parallel"),
-  category: "traditional",
-  isAvailable(config, env = process.env) {
-    return hasApiKey(config, "parallel", env)
-  },
-  async search(query, options, context) {
-    const apiKey = requireApiKey(context.config, "parallel", context.env)
-    const request = buildParallelRequest(query, options, {
-      ...context.config.parallel,
-      apiKey,
-      timeoutSeconds: context.config.timeoutSeconds,
-    })
-    const response = await requestJson<ParallelResponse>("parallel", request.url, context, request)
-    const results =
-      response.results
-        ?.filter((entry) => Boolean(entry.url))
-        .map((entry) =>
-          asSearchResultItem({
-            title: entry.title ?? entry.url ?? "Untitled result",
-            url: entry.url ?? "",
-            snippet: entry.excerpts?.join(" ") ?? "",
-            publishedDate: entry.publish_date ?? undefined,
-          }),
-        ) ?? []
+export const parallelProvider = defineProvider("parallel", "traditional", async (query, options, context) => {
+  const apiKey = requireApiKey(context.config, "parallel", context.env)
+  const request = buildParallelRequest(query, options, {
+    ...context.config.parallel,
+    apiKey,
+    timeoutSeconds: context.config.timeoutSeconds,
+  })
+  const response = await requestJson<ParallelResponse>("parallel", request.url, context, request)
+  const results =
+    response.results
+      ?.filter((entry) => Boolean(entry.url))
+      .map((entry) =>
+        asSearchResultItem({
+          title: entry.title ?? entry.url ?? "Untitled result",
+          url: entry.url ?? "",
+          snippet: entry.excerpts?.join(" ") ?? "",
+          publishedDate: entry.publish_date ?? undefined,
+        }),
+      ) ?? []
 
-    return {
-      provider: "parallel",
-      query,
-      results,
-    }
-  },
-}
+  return {
+    provider: "parallel",
+    query,
+    results,
+  }
+})

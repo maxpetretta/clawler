@@ -1,4 +1,4 @@
-import { isProviderId, providerIds, type ProviderId } from "./providers/types"
+import { isProviderId, type ProviderId, providerIds } from "./providers/types"
 
 export type ClawlerProviderSelection = ProviderId | "auto"
 export type ExaSearchType = "neural" | "fast" | "auto" | "deep" | "deep-reasoning" | "instant"
@@ -205,9 +205,9 @@ export function resolveConfig(pluginConfig: unknown): ClawlerConfig {
     provider: asProviderSelection(record.provider) ?? DEFAULT_CONFIG.provider,
     fallback: asProviderIdArray(record.fallback) ?? DEFAULT_CONFIG.fallback,
     toolName: asNonEmptyString(record.toolName) ?? DEFAULT_CONFIG.toolName,
-    maxResults: asBoundedPositiveInteger(record.maxResults, 1, 20) ?? DEFAULT_CONFIG.maxResults,
-    cacheTtlMinutes: asBoundedPositiveInteger(record.cacheTtlMinutes, 0) ?? DEFAULT_CONFIG.cacheTtlMinutes,
-    timeoutSeconds: asBoundedPositiveInteger(record.timeoutSeconds, 1) ?? DEFAULT_CONFIG.timeoutSeconds,
+    maxResults: asBoundedInt(record.maxResults, 1, 20) ?? DEFAULT_CONFIG.maxResults,
+    cacheTtlMinutes: asBoundedInt(record.cacheTtlMinutes, 0) ?? DEFAULT_CONFIG.cacheTtlMinutes,
+    timeoutSeconds: asBoundedInt(record.timeoutSeconds, 1) ?? DEFAULT_CONFIG.timeoutSeconds,
     searchDefaults: resolveSharedOptions(record.searchDefaults),
     brave: resolveBraveConfig(record.brave),
     exa: resolveExaConfig(record.exa),
@@ -250,7 +250,7 @@ function resolveExaConfig(value: unknown): ClawlerConfig["exa"] {
     apiKey: readApiKey(value),
     type: asEnum(record?.type, EXA_SEARCH_TYPES) ?? DEFAULT_CONFIG.exa.type,
     category: asEnum(record?.category, EXA_CATEGORIES),
-    maxAgeHours: asBoundedInteger(record?.maxAgeHours, -1),
+    maxAgeHours: asBoundedInt(record?.maxAgeHours, -1),
   }
 }
 
@@ -262,7 +262,7 @@ function resolveTavilyConfig(value: unknown): ClawlerConfig["tavily"] {
     searchDepth: asEnum(record?.searchDepth, TAVILY_SEARCH_DEPTHS) ?? DEFAULT_CONFIG.tavily.searchDepth,
     includeAnswer: asTavilyAnswerMode(record?.includeAnswer) ?? DEFAULT_CONFIG.tavily.includeAnswer,
     autoParameters: asBoolean(record?.autoParameters) ?? DEFAULT_CONFIG.tavily.autoParameters,
-    chunksPerSource: asBoundedPositiveInteger(record?.chunksPerSource, 1),
+    chunksPerSource: asBoundedInt(record?.chunksPerSource, 1),
     includeRawContent: asBoolean(record?.includeRawContent) ?? DEFAULT_CONFIG.tavily.includeRawContent,
     exactMatch: asBoolean(record?.exactMatch) ?? DEFAULT_CONFIG.tavily.exactMatch,
   }
@@ -276,9 +276,8 @@ function resolvePerplexityConfig(value: unknown): ClawlerConfig["perplexity"] {
     apiMode: asEnum(record?.apiMode, PERPLEXITY_API_MODES) ?? DEFAULT_CONFIG.perplexity.apiMode,
     baseUrl: asNonEmptyString(record?.baseUrl) ?? DEFAULT_CONFIG.perplexity.baseUrl,
     model: asNonEmptyString(record?.model) ?? DEFAULT_CONFIG.perplexity.model,
-    maxTokens: asBoundedPositiveInteger(record?.maxTokens, 1, 1000000) ?? DEFAULT_CONFIG.perplexity.maxTokens,
-    maxTokensPerPage:
-      asBoundedPositiveInteger(record?.maxTokensPerPage, 1, 1000000) ?? DEFAULT_CONFIG.perplexity.maxTokensPerPage,
+    maxTokens: asBoundedInt(record?.maxTokens, 1, 1000000) ?? DEFAULT_CONFIG.perplexity.maxTokens,
+    maxTokensPerPage: asBoundedInt(record?.maxTokensPerPage, 1, 1000000) ?? DEFAULT_CONFIG.perplexity.maxTokensPerPage,
   }
 }
 
@@ -288,10 +287,9 @@ function resolveParallelConfig(value: unknown): ClawlerConfig["parallel"] {
   return {
     apiKey: readApiKey(value),
     mode: asNonEmptyString(record?.mode) ?? DEFAULT_CONFIG.parallel.mode,
-    maxCharsPerResult:
-      asBoundedPositiveInteger(record?.maxCharsPerResult, 100) ?? DEFAULT_CONFIG.parallel.maxCharsPerResult,
-    maxCharsTotal: asBoundedPositiveInteger(record?.maxCharsTotal, 100) ?? DEFAULT_CONFIG.parallel.maxCharsTotal,
-    maxAgeSeconds: asBoundedPositiveInteger(record?.maxAgeSeconds, 1),
+    maxCharsPerResult: asBoundedInt(record?.maxCharsPerResult, 100) ?? DEFAULT_CONFIG.parallel.maxCharsPerResult,
+    maxCharsTotal: asBoundedInt(record?.maxCharsTotal, 100) ?? DEFAULT_CONFIG.parallel.maxCharsTotal,
+    maxAgeSeconds: asBoundedInt(record?.maxAgeSeconds, 1),
   }
 }
 
@@ -331,8 +329,8 @@ function resolveAnthropicConfig(value: unknown): ClawlerConfig["anthropic"] {
     apiKey: readApiKey(value),
     model: asNonEmptyString(record?.model) ?? DEFAULT_CONFIG.anthropic.model,
     toolVersion: asEnum(record?.toolVersion, ANTHROPIC_TOOL_VERSIONS) ?? DEFAULT_CONFIG.anthropic.toolVersion,
-    maxTokens: asBoundedPositiveInteger(record?.maxTokens, 1) ?? DEFAULT_CONFIG.anthropic.maxTokens,
-    maxUses: asBoundedPositiveInteger(record?.maxUses, 1) ?? DEFAULT_CONFIG.anthropic.maxUses,
+    maxTokens: asBoundedInt(record?.maxTokens, 1) ?? DEFAULT_CONFIG.anthropic.maxTokens,
+    maxUses: asBoundedInt(record?.maxUses, 1) ?? DEFAULT_CONFIG.anthropic.maxUses,
     directOnly: asBoolean(record?.directOnly) ?? DEFAULT_CONFIG.anthropic.directOnly,
     city: asNonEmptyString(record?.city),
     region: asNonEmptyString(record?.region),
@@ -360,11 +358,7 @@ function asEnum<T extends string>(value: unknown, allowed: readonly T[]): T | un
   return typeof value === "string" && allowed.includes(value as T) ? (value as T) : undefined
 }
 
-function asBoundedPositiveInteger(value: unknown, min: number, max = Number.POSITIVE_INFINITY): number | undefined {
-  return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max ? value : undefined
-}
-
-function asBoundedInteger(value: unknown, min: number, max = Number.POSITIVE_INFINITY): number | undefined {
+function asBoundedInt(value: unknown, min: number, max = Number.POSITIVE_INFINITY): number | undefined {
   return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max ? value : undefined
 }
 

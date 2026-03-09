@@ -1,0 +1,193 @@
+---
+import "@fontsource-variable/inter/standard.css"
+import "@fontsource-variable/inter/standard-italic.css"
+import "@/styles/global.css"
+import {
+  heroTitleAccent,
+  heroTitleLead,
+  siteDomain,
+} from "@/lib/site"
+
+const installCmd = "openclaw plugin add clawler"
+
+const driftQueries = [
+  "best practices for API design", "how do transformers work", "climate change research 2026",
+  "latest WWDC announcements", "what is retrieval augmented generation", "EU AI Act compliance guide",
+  "best noise cancelling headphones", "how to deploy to cloudflare workers", "rust vs go for backend services",
+  "when is the next solar eclipse", "postgres jsonb query performance", "how does mTLS work",
+  "best espresso machines under $500", "flights from SFO to NRT", "what is the CAP theorem",
+  "how to negotiate a raise", "history of the internet", "why is the sky blue",
+  "best carry-on luggage for Europe", "how to make sourdough starter", "difference between TCP and UDP",
+  "top rated sci-fi books 2026", "how does CRISPR gene editing work", "cheapest flights to Tokyo in April",
+  "react server components explained", "what causes aurora borealis", "best standing desks for small spaces",
+]
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1200" />
+    <meta name="robots" content="noindex" />
+    <title>OG Image</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" />
+  </head>
+
+  <body>
+    <div class="og-frame">
+      <div class="grid-bg" aria-hidden="true"></div>
+
+      <div class="hero-drift" aria-hidden="true">
+        {driftQueries.map((q) => <span>{q}</span>)}
+      </div>
+
+      <div class="og-content">
+        <p class="og-eyebrow">better web search for your claw</p>
+        <h1 class="og-title">{heroTitleLead} <em>{heroTitleAccent}</em></h1>
+        <div class="og-install">
+          <span class="og-install-prompt">$</span>
+          <code>{installCmd}</code>
+        </div>
+      </div>
+
+      <div class="og-domain">{siteDomain}</div>
+    </div>
+  </body>
+</html>
+
+<style is:global>
+  .og-frame {
+    width: 1200px;
+    height: 630px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    background: var(--background);
+  }
+
+  .og-frame .grid-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 80px 80px;
+    mask-image: radial-gradient(ellipse 60% 50% at 50% 20%, black 10%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 20%, black 10%, transparent 100%);
+  }
+
+  .og-frame .hero-drift {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .og-frame .hero-drift span {
+    position: absolute;
+    white-space: nowrap;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+    font-size: 13px;
+    color: var(--foreground);
+    opacity: 0.08;
+  }
+
+  /* Scatter the drift queries across the frame */
+  .og-frame .hero-drift span:nth-child(1)  { left: 5%;  top: 5%; }
+  .og-frame .hero-drift span:nth-child(2)  { left: 55%; top: 3%; }
+  .og-frame .hero-drift span:nth-child(3)  { left: 35%; top: 10%; }
+  .og-frame .hero-drift span:nth-child(4)  { left: 75%; top: 8%; }
+  .og-frame .hero-drift span:nth-child(5)  { left: 15%; top: 18%; }
+  .og-frame .hero-drift span:nth-child(6)  { left: 62%; top: 16%; }
+  .og-frame .hero-drift span:nth-child(7)  { left: 88%; top: 14%; }
+  .og-frame .hero-drift span:nth-child(8)  { left: 42%; top: 24%; }
+  .og-frame .hero-drift span:nth-child(9)  { left: 8%;  top: 30%; }
+  .og-frame .hero-drift span:nth-child(10) { left: 70%; top: 28%; }
+  .og-frame .hero-drift span:nth-child(11) { left: 25%; top: 36%; }
+  .og-frame .hero-drift span:nth-child(12) { left: 82%; top: 34%; }
+  .og-frame .hero-drift span:nth-child(13) { left: 50%; top: 42%; }
+  .og-frame .hero-drift span:nth-child(14) { left: 3%;  top: 48%; }
+  .og-frame .hero-drift span:nth-child(15) { left: 65%; top: 46%; }
+  .og-frame .hero-drift span:nth-child(16) { left: 38%; top: 54%; }
+  .og-frame .hero-drift span:nth-child(17) { left: 85%; top: 52%; }
+  .og-frame .hero-drift span:nth-child(18) { left: 12%; top: 60%; }
+  .og-frame .hero-drift span:nth-child(19) { left: 58%; top: 58%; }
+  .og-frame .hero-drift span:nth-child(20) { left: 30%; top: 66%; }
+  .og-frame .hero-drift span:nth-child(21) { left: 78%; top: 64%; }
+  .og-frame .hero-drift span:nth-child(22) { left: 45%; top: 72%; }
+  .og-frame .hero-drift span:nth-child(23) { left: 8%;  top: 78%; }
+  .og-frame .hero-drift span:nth-child(24) { left: 68%; top: 76%; }
+  .og-frame .hero-drift span:nth-child(25) { left: 22%; top: 84%; }
+  .og-frame .hero-drift span:nth-child(26) { left: 52%; top: 88%; }
+  .og-frame .hero-drift span:nth-child(27) { left: 80%; top: 92%; }
+
+  .og-content {
+    position: relative;
+    z-index: 10;
+    padding: 0 60px 0 100px;
+  }
+
+  .og-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  .og-title {
+    font-family: var(--font-display);
+    font-size: 158px;
+    line-height: 0.94;
+    letter-spacing: -0.03em;
+    font-weight: 400;
+  }
+
+  .og-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .og-install {
+    display: inline-flex;
+    align-items: center;
+    gap: 17px;
+    margin-top: 40px;
+    padding: 18px 34px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(229, 169, 26, 0.04);
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 32px;
+    color: rgba(232, 228, 220, 0.7);
+  }
+
+  .og-install-prompt {
+    color: rgba(229, 169, 26, 0.5);
+  }
+
+  .og-install code {
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  .og-domain {
+    position: absolute;
+    bottom: 36px;
+    right: 48px;
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 36px;
+    font-weight: 600;
+    color: var(--muted);
+    opacity: 0.6;
+  }
+
+  astro-dev-toolbar { display: none !important; }
+</style>

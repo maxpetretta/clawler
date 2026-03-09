@@ -2,10 +2,20 @@
 import "@fontsource-variable/inter/standard.css"
 import "@fontsource-variable/inter/standard-italic.css"
 import "@/styles/global.css"
+import {
+  heroSubtitle,
+  heroTitleAccent,
+  heroTitleLead,
+  ogImageAlt,
+  pageDescription,
+  pageTitle,
+  siteUrl,
+} from "@/lib/site"
 
-const title = "Clawler | Crawl the web. Fast."
-const description =
-  "OpenClaw plugin that reaches across eight search providers — Anthropic, Brave, Exa, Gemini, OpenAI, Parallel, Perplexity, and Tavily — with a single tool."
+const title = pageTitle
+const description = pageDescription
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? siteUrl).toString()
+const ogImageUrl = new URL("/og.png", Astro.site ?? siteUrl).toString()
 
 const providers = [
   {
@@ -98,10 +108,18 @@ const configCode = highlight(`{
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" />
-    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site ?? "https://clawler.dev")} />
+    <link rel="canonical" href={canonicalUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:alt" content={ogImageAlt} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <meta name="twitter:image:alt" content={ogImageAlt} />
   </head>
 
   <body>
@@ -175,11 +193,9 @@ const configCode = highlight(`{
           <span>how to write a good cover letter</span>
           <span>mars rover latest discoveries</span>
         </div>
-        <h1>Crawl the web.<br /><em>Fast.</em></h1>
+        <h1>{heroTitleLead}<br /><em>{heroTitleAccent}</em></h1>
         <p class="hero-sub">
-          Your OpenClaw agent gets one built-in search engine. Clawler gives it
-          eight&mdash;from fast link retrieval to AI-powered answers&mdash;without
-          changing a single prompt.
+          {heroSubtitle}
         </p>
         <div class="hero-actions">
           <div class="install-block">

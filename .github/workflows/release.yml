@@ -66,8 +66,16 @@ jobs:
             fi
           }
 
-      - name: Install ClawHub CLI
-        run: npm i -g clawhub
+      - name: Install ClawHub CLI From Repository
+        shell: bash
+        run: |
+          tmpdir="$(mktemp -d)"
+          git clone --depth 1 https://github.com/openclaw/clawhub.git "$tmpdir/clawhub"
+          pushd "$tmpdir/clawhub" >/dev/null
+          bun install
+          bun run --cwd packages/clawdhub build
+          npm i -g ./packages/clawdhub
+          popd >/dev/null
 
       - name: Login To ClawHub
         env:

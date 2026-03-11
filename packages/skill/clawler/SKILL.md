@@ -24,9 +24,12 @@ If Clawler is available in the current OpenClaw environment:
 1. Run the setup flow if the plugin CLI is available:
    - `openclaw clawler setup`
 2. Choose one default provider and configure credentials for that provider.
-3. Keep the built-in `web_search` tool enabled unless you explicitly want Clawler to replace it for that OpenClaw installation.
 4. Verify availability:
    - `openclaw clawler status`
+
+Optional:
+- If you want Clawler to replace the built-in `web_search` tool for that OpenClaw installation, add `web_search` to `tools.deny`.
+- This changes installation-wide search behavior and should only be done deliberately.
 
 If the setup CLI is not available, make sure OpenClaw is configured so:
 
@@ -92,7 +95,7 @@ Supported parameters:
 4. For technical or doc-heavy queries, use domain allow-lists when official sources matter.
 5. If the query needs a synthesized answer with citations, prefer answer-native providers such as OpenAI, Anthropic, Gemini, Tavily, or Perplexity.
 6. If the query mainly needs fast retrieval of links, traditional search providers such as Exa, Brave, or Parallel can be enough.
-7. Treat changes to `tools.deny` as an installation-wide behavior change, not a routine default. Only recommend it when the operator explicitly wants Clawler to replace the built-in search surface.
+7. Treat changes to `tools.deny` as an optional installation-wide behavior change, not a routine default. Only recommend it when the operator explicitly wants Clawler to replace the built-in search surface.
 
 ## Provider Notes
 

@@ -5,6 +5,23 @@ read_when:
   - You are asked to look something up online
   - You need to reason about which search provider to use
   - You need to explain Clawler configuration or setup
+metadata:
+  openclaw:
+    homepage: https://github.com/maxpetretta/clawler
+    requires:
+      bins:
+        - openclaw
+      env:
+        - BRAVE_API_KEY
+        - EXA_API_KEY
+        - TAVILY_API_KEY
+        - PERPLEXITY_API_KEY
+        - OPENROUTER_API_KEY
+        - PARALLEL_API_KEY
+        - GEMINI_API_KEY
+        - GOOGLE_AI_API_KEY
+        - OPENAI_API_KEY
+        - ANTHROPIC_API_KEY
 ---
 
 # Clawler Skill
@@ -18,7 +35,7 @@ If Clawler is available in the current OpenClaw environment:
 1. Run the setup flow if the plugin CLI is available:
    - `openclaw clawler setup`
 2. Choose a default provider and configure credentials.
-3. Allow the setup flow to deny the built-in `web_search` tool when you want Clawler to be the canonical search surface.
+3. Only allow the setup flow to deny the built-in `web_search` tool if you explicitly want Clawler to become the canonical search surface for that OpenClaw installation.
 4. Verify availability:
    - `openclaw clawler status`
 
@@ -27,7 +44,24 @@ If the setup CLI is not available, make sure OpenClaw is configured so:
 - the Clawler plugin is installed and enabled
 - a default provider is selected
 - the provider API key is available through plugin config or environment variables
-- `tools.deny` includes `web_search` when you want to force use of `search_web`
+- `tools.deny` includes `web_search` only when you intentionally want to disable the built-in search tool for that OpenClaw installation
+
+## Credentials
+
+Clawler supports multiple providers. You do not need every provider key; configure one provider in plugin config or provide one of these env vars:
+
+- `BRAVE_API_KEY`
+- `EXA_API_KEY`
+- `TAVILY_API_KEY`
+- `PERPLEXITY_API_KEY`
+- `OPENROUTER_API_KEY`
+- `PARALLEL_API_KEY`
+- `GEMINI_API_KEY`
+- `GOOGLE_AI_API_KEY`
+- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
+
+Provider-specific settings can also be stored in the Clawler plugin config inside the OpenClaw config file instead of environment variables.
 
 ## Tool
 
@@ -69,6 +103,7 @@ Supported parameters:
 4. For technical or doc-heavy queries, use domain allow-lists when official sources matter.
 5. If the query needs a synthesized answer with citations, prefer answer-native providers such as OpenAI, Anthropic, Gemini, Tavily, or Perplexity.
 6. If the query mainly needs fast retrieval of links, traditional search providers such as Exa, Brave, or Parallel can be enough.
+7. Treat changes to `tools.deny` as an installation-wide behavior change, not a routine default. Only recommend it when the operator explicitly wants Clawler to replace the built-in search surface.
 
 ## Provider Notes
 

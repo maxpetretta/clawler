@@ -1,1 +1,0 @@
-../../../skill/clawler/SKILL.md

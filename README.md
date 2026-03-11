@@ -38,6 +38,10 @@ Clawler applies one shared option model across providers where possible:
 - **`topic`** — domain/category hint
 - **`include_domains` / `exclude_domains`** — domain allow/deny lists
 
+### Auto-detection
+
+When `provider` is set to `"auto"`, Clawler picks the first provider that has a valid API key configured. The detection order is: exa, tavily, brave, parallel, perplexity, openai, anthropic, gemini.
+
 ### Fallback chain
 
 When the primary provider fails because of timeout, API error, rate limiting, or missing credentials, Clawler can retry providers from an ordered fallback list.

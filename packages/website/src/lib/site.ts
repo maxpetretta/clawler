@@ -35,7 +35,7 @@ export const providers: ProviderInfo[] = [
     label: "Brave",
     color: "#fb542b",
     type: "Fast links",
-    desc: "Private, fast web search. Great for quick factual lookups and getting a list of relevant pages.",
+    desc: "Independent, fast web search. Great for quick factual lookups and getting a list of relevant pages.",
   },
   {
     id: "exa",
@@ -76,7 +76,7 @@ export const providers: ProviderInfo[] = [
     id: "tavily",
     label: "Tavily",
     color: "#0bc98c",
-    type: "Research",
-    desc: "Research-grade search that returns an answer and the sources it used. Built for thorough lookups.",
+    type: "Hybrid",
+    desc: "Research-grade search that returns both an AI answer and structured results with sources. Built for thorough lookups.",
   },
 ]

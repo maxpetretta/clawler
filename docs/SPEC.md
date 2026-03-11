@@ -3,7 +3,7 @@
 > Universal web search plugin for OpenClaw.
 > Drop-in replacement for the built-in `web_search` tool.
 
-**Version:** 0.1.0
+**Version:** 2026.3.11
 **Author:** Max Petretta
 **Date:** 2026-03-07
 
@@ -45,7 +45,6 @@ Implemented now:
 
 Not fully implemented yet:
 
-- Built-in benchmark harness checked into `scripts/`
 - Rich UI hints beyond the JSON schema surface
 
 ## 3. Providers
@@ -763,7 +762,5 @@ Current live validation status:
 
 ## 13. Next Likely Work
 
-1. Persist setup wizard changes into OpenClaw config files.
-2. Add a checked-in benchmark harness.
-3. Improve source-quality tuning for Tavily and Perplexity on official-docs-heavy queries.
-4. Decide whether the tool should eventually return structured JSON instead of formatted text.
+1. Decide whether the tool should eventually return structured JSON instead of formatted text.
+2. Add rich UI hints beyond the JSON schema surface.

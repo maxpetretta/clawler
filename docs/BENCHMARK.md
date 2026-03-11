@@ -44,7 +44,7 @@ Weights: **completeness (30%)** + **accuracy of specifics (25%)** + **citation q
 
 ### Quality notes
 
-- **OpenAI (A, 10.0):** 10.4K chars with `tool_choice: { type: "web_search" }` forcing search. 28 inline url_citation annotations with title, URL, and character offsets + 98 background sources via `include: ["web_search_call.action.sources"]`. Well-structured markdown with clear framework headers. Most citations of any provider when including sources. **Note:** without `tool_choice`, gpt-4o may answer complex queries from training data and skip search entirely, returning 0 citations.
+- **OpenAI (A, 10.0):** 10.4K chars with `tool_choice: { type: "web_search" }` forcing search. 28 inline url_citation annotations with title, URL, and character offsets + 98 background sources via `include: ["web_search_call.action.sources"]`. Well-structured markdown with clear framework headers. Most citations of any provider when including sources. **Note:** without `tool_choice`, gpt-5-mini may answer complex queries from training data and skip search entirely, returning 0 citations.
 - **Perplexity (A-, 9.0):** ~21.5K chars of rich snippet content from 5 results via the Search API (`/search` endpoint) with `max_tokens: 4000` and `max_tokens_per_page: 2000`. Each result includes 1.6K-12K chars of page content. 5 citations to authoritative sources (EU Parliament, IAPP, regulatory comparison sites). Top 1-2 results retain full quality; lower results get truncated but still useful. Without `max_tokens`/`max_tokens_per_page`, returns 54K+ chars which overwhelms agent context. The Chat Completions path (`/chat/completions`) returns a synthesized 14K-char answer with 8-10 citations but takes 28-37s instead of 505ms.
 - **Anthropic (A-, 9.0):** 13.5K chars of well-structured comparison with specific compliance requirements per framework (risk categories, FRIA obligations, fines up to €35M/7% turnover). 30 real, deduplicated citations from authoritative legal/regulatory sources. Comprehensive but slow (85s due to multi-turn `pause_turn` continuation). Most real citations of any LLM provider.
 - **Gemini (B+, 8.5):** 12.3K chars of thorough analysis covering all 3 frameworks in depth. But all 5 citations are `vertexaisearch.cloud.google.com` redirect URLs — these return 404 when fetched directly and only resolve in a browser with JavaScript. This is a Gemini API limitation, not a plugin bug. Content quality alone would be A-; unverifiable citations are a significant penalty.
@@ -152,7 +152,7 @@ Note: `max_tokens` is in tokens (~4 chars/token), not characters. The API defaul
 
 ### Benchmark corrections
 - **Brave:** v1 benchmark used `api.brave.com` instead of `api.search.brave.com`. Plugin source was always correct.
-- **OpenAI:** v1 benchmark didn't use `tool_choice` or `include: sources`. Without `tool_choice`, gpt-4o skips search for complex queries it can answer from training data.
+- **OpenAI:** v1 benchmark didn't use `tool_choice` or `include: sources`. Without `tool_choice`, gpt-5-mini skips search for complex queries it can answer from training data.
 - **Parallel:** v1 benchmark read `excerpt` (string) instead of `excerpts` (array), getting 0 chars.
 - **Perplexity:** v1 benchmark used chat completions path. Plugin defaults to Search API.
 - **Tavily:** 170ms result was a Tavily response cache hit from repeated identical queries. Real speed is ~1.5-2.5s with `auto_parameters: true`.
@@ -204,7 +204,7 @@ Best for: synthesized answers, complex multi-source questions, research.
 | Provider | Limitation | Impact | Workaround |
 |---|---|---|---|
 | **Gemini** | All citations are `vertexaisearch.cloud.google.com` redirect URLs | URLs return 404 when fetched; only resolve in browser JS | None — Gemini API limitation. Real URLs not available via REST API. |
-| **OpenAI** | gpt-4o may skip search for complex queries answerable from training data | Returns 0 citations when search doesn't trigger | Use `tool_choice: { type: "web_search" }` to force search (plugin default). |
+| **OpenAI** | gpt-5-mini may skip search for complex queries answerable from training data | Returns 0 citations when search doesn't trigger | Use `tool_choice: { type: "web_search" }` to force search (plugin default). |
 | **Brave** | `extra_snippets` and rich data require paid Search plan | Free tier returns descriptions only (no extra excerpts) | Upgrade to paid plan ($5/month) for richer results |
 | **Anthropic** | Multi-turn `pause_turn` adds 40-80s per query | Slowest provider by far | Reduce `maxUses` to limit search iterations |
 | **Tavily** | `auto_parameters: true` may auto-upgrade to `advanced` depth | 2 credits per query instead of 1 | Set `auto_parameters: false` + explicit `search_depth` to control cost |

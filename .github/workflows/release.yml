@@ -7,6 +7,7 @@ on:
 jobs:
   publish:
     name: Publish Release Artifacts
+    if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -49,6 +50,9 @@ jobs:
             echo "Release tag ($tag) does not match packages/skill version ($skill_version)."
             exit 1
           fi
+
+      - name: Run Release Preflight
+        run: bun run release:preflight -- --skip-install
 
       - name: Publish Plugin To npm
         working-directory: packages/plugin

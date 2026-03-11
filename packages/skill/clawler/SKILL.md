@@ -1,6 +1,6 @@
 ---
 name: clawler
-description: "Use when you need current web information through the Clawler plugin."
+description: "Use when you want current web information through the Clawler OpenClaw plugin."
 read_when:
   - You are asked to look something up online
   - You need to reason about which search provider to use
@@ -23,21 +23,21 @@ If Clawler is available in the current OpenClaw environment:
 
 1. Run the setup flow if the plugin CLI is available:
    - `openclaw clawler setup`
-2. Choose a default provider and configure credentials.
-3. Only allow the setup flow to deny the built-in `web_search` tool if you explicitly want Clawler to become the canonical search surface for that OpenClaw installation.
+2. Choose one default provider and configure credentials for that provider.
+3. Keep the built-in `web_search` tool enabled unless you explicitly want Clawler to replace it for that OpenClaw installation.
 4. Verify availability:
    - `openclaw clawler status`
 
 If the setup CLI is not available, make sure OpenClaw is configured so:
 
 - the Clawler plugin is installed and enabled
-- a default provider is selected
-- the provider API key is available through plugin config or environment variables
+- one provider is selected
+- that provider API key is available through plugin config or environment variables
 - `tools.deny` includes `web_search` only when you intentionally want to disable the built-in search tool for that OpenClaw installation
 
 ## Credentials
 
-Clawler supports multiple providers. No single provider credential is universally required for this skill; configure one provider in plugin config or provide one of these env vars:
+Clawler supports multiple providers. No single provider credential is universally required for this skill; configure one provider in plugin config or provide one of these env vars for the provider you choose:
 
 - `BRAVE_API_KEY`
 - `EXA_API_KEY`

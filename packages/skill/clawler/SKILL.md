@@ -11,22 +11,11 @@ metadata:
     requires:
       bins:
         - openclaw
-      env:
-        - BRAVE_API_KEY
-        - EXA_API_KEY
-        - TAVILY_API_KEY
-        - PERPLEXITY_API_KEY
-        - OPENROUTER_API_KEY
-        - PARALLEL_API_KEY
-        - GEMINI_API_KEY
-        - GOOGLE_AI_API_KEY
-        - OPENAI_API_KEY
-        - ANTHROPIC_API_KEY
 ---
 
 # Clawler Skill
 
-Clawler is the canonical web-search surface for this project. Prefer it over OpenClaw's built-in `web_search` tool when the plugin is installed.
+Clawler is an optional web-search surface for this project. Use it when the plugin is installed and the operator wants Clawler to handle web search.
 
 ## Setup
 
@@ -48,7 +37,7 @@ If the setup CLI is not available, make sure OpenClaw is configured so:
 
 ## Credentials
 
-Clawler supports multiple providers. You do not need every provider key; configure one provider in plugin config or provide one of these env vars:
+Clawler supports multiple providers. No single provider credential is universally required for this skill; configure one provider in plugin config or provide one of these env vars:
 
 - `BRAVE_API_KEY`
 - `EXA_API_KEY`
@@ -61,7 +50,7 @@ Clawler supports multiple providers. You do not need every provider key; configu
 - `OPENAI_API_KEY`
 - `ANTHROPIC_API_KEY`
 
-Provider-specific settings can also be stored in the Clawler plugin config inside the OpenClaw config file instead of environment variables.
+Provider-specific settings can also be stored in the Clawler plugin config inside the OpenClaw config file instead of environment variables. Because the operator chooses the provider, these env vars are optional alternatives rather than universally required metadata for the skill.
 
 ## Tool
 
@@ -97,7 +86,7 @@ Supported parameters:
 
 ## Usage Rules
 
-1. Treat `search_web` as the preferred search tool.
+1. Treat `search_web` as the preferred search tool only when Clawler has been intentionally configured as the active search surface.
 2. Use provider-neutral instructions unless the user explicitly wants a provider comparison or a specific backend.
 3. Use the per-call `provider` override when the query clearly benefits from a specific backend.
 4. For technical or doc-heavy queries, use domain allow-lists when official sources matter.
